@@ -25,27 +25,19 @@ This skill equips coding assistants to:
 
 ## ⚡ Quick Install
 
-Pick the line for your agent. Each one clones the skill into the folder that agent scans for skills.
+Install with the [skills](https://skills.sh) CLI. It detects your agents and lets you pick which ones get the skill.
 
-**Claude Code (global, all projects)**
+**Global (all projects)**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/tudorturcanu/iphone-duo-skill/main/install.sh | bash -s -- --claude-global
+npx skills add tudorturcanu/iphone-duo-skill -g
 ```
 
-**Claude Code (this project only, shared with your team via git)**
+**This project only (shared with your team via git)**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/tudorturcanu/iphone-duo-skill/main/install.sh | bash -s -- --claude-local
+npx skills add tudorturcanu/iphone-duo-skill
 ```
 
-**Antigravity (global)**
-```bash
-curl -fsSL https://raw.githubusercontent.com/tudorturcanu/iphone-duo-skill/main/install.sh | bash -s -- --global
-```
-
-**Antigravity (this workspace only)**
-```bash
-curl -fsSL https://raw.githubusercontent.com/tudorturcanu/iphone-duo-skill/main/install.sh | bash -s -- --workspace
-```
+Run the same command again to update to the latest version.
 
 <details>
 <summary>Manual install with git clone</summary>
@@ -58,7 +50,7 @@ curl -fsSL https://raw.githubusercontent.com/tudorturcanu/iphone-duo-skill/main/
 | Antigravity | workspace | `git clone https://github.com/tudorturcanu/iphone-duo-skill.git .agents/skills/iphone-duo-design` |
 | Any other agent | — | Clone anywhere and point the agent at `SKILL.md`. It is plain Markdown with a `name`/`description` frontmatter, the format used by Claude Code, Antigravity, Codex, Cursor, and other skill-aware tools. |
 
-Re-running the installer on an existing install pulls the latest version.
+To update a manual install, run `git pull` inside the cloned folder.
 </details>
 
 Once installed, the skill activates automatically when you mention iPhone Duo, the fold or hinge, device poses, reserved regions, or side/vertical toolbars. You can also invoke it directly with `/iphone-duo-design` in Claude Code.
@@ -107,7 +99,6 @@ Three benchmark prompts with realistic fixtures live in `evals/evals.json`. They
 
 ```text
 ├── SKILL.md                          # Main instruction file
-├── install.sh                        # Installer script
 ├── scripts/
 │   └── audit_duo_readiness.sh        # Fast bash audit tool
 ├── references/
