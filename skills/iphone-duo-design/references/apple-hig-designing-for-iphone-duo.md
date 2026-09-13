@@ -6,13 +6,15 @@ agents. It preserves the guidance and the developer-doc links but not Apple's te
 images. Read the source for exact wording and diagrams:
 
 - HIG article: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
+  (Markdown version: https://developer.apple.com/tutorials/data/design/human-interface-guidelines/designing-for-iphone-duo.md).
+  Last checked against the source on 2026-09-13; the article's change log then had one entry (September 9, 2026).
 - Related: [Designing for iOS](https://developer.apple.com/design/human-interface-guidelines/designing-for-ios),
   [Layout](https://developer.apple.com/design/human-interface-guidelines/layout),
   [Split views](https://developer.apple.com/design/human-interface-guidelines/split-views),
   [Toolbars](https://developer.apple.com/design/human-interface-guidelines/toolbars),
   [Designing for games](https://developer.apple.com/design/human-interface-guidelines/designing-for-games),
   [Apple Design Resources](https://developer.apple.com/design/resources/#ios-apps)
-- Tech Talks: `videos/play/tech-talks/111463` and `videos/play/tech-talks/111466`
+- Tech Talks: `videos/play/tech-talks/111462`, `111463`, and `111466`
 
 ## 1. What the device is
 
@@ -134,6 +136,9 @@ Rules:
   Keep frequent actions (Compose, New Note) and status-bearing items (badges) visible
   longest.
   Developer docs: SwiftUI `ToolbarItemVisibilityPriority`, UIKit `UIBarButtonItemVisibilityPriority`.
+  Set it with SwiftUI `.visibilityPriority(_:)` on any `ToolbarContent`, including a `ToolbarItemGroup`
+  (`.automatic`, `.low`, `.high`, or `init(higherThan:)`/`init(lowerThan:)`), or UIKit
+  `UIBarButtonItem.visibilityPriority` (`.high`, `.standard`, `.low`, or a raw `Int`).
 - **Don't override default bar placement.** Side placement is a core iPhone Duo pattern.
 - **Full-width layouts** are fine for immersive, non-scrolling interfaces if nothing
   collides with the Dynamic Island or status bar. Calculator goes from 4 columns × 5
@@ -156,13 +161,22 @@ Rules:
   the ellipsis symbol for overflow; give other menus a distinct symbol.
   Developer docs: SwiftUI `ToolbarOverflowMenu`, UIKit `UINavigationItem.additionalOverflowItems`.
 
-## 5. API names the HIG confirms
+## 5. API names
 
-Safe to use: `NavigationSplitView`, `UISplitViewController`, `ToolbarItemGroup`,
+Confirmed by the HIG: `NavigationSplitView`, `UISplitViewController`, `ToolbarItemGroup`,
 `UIBarButtonItemGroup`, `ToolbarItemVisibilityPriority`, `UIBarButtonItemVisibilityPriority`,
 `ToolbarOverflowMenu`, `UINavigationItem.additionalOverflowItems`, `Label`,
 `UIBarButtonItem`, `GeometryProxy.safeAreaInsets`, `UIView.safeAreaInsets`.
 
-**Not named by the HIG** (look up in the SDK, never guess): reserved-region APIs,
-arrangement-view types, the exact modifier/property for setting visibility priority,
-and any pose or fold-state query API.
+Confirmed in the developer docs (checked 2026-09-13):
+- SwiftUI `ToolbarContent.visibilityPriority(_:)`, e.g. `ToolbarItem { … }.visibilityPriority(.high)`.
+- UIKit `UIBarButtonItem.visibilityPriority`. No group-level property is documented on `UIBarButtonItemGroup`;
+  set it on each item.
+- SwiftUI `ToolbarOverflowMenu { … }` inside `.toolbar`. UIKit `additionalOverflowItems` is a
+  `UIDeferredMenuElement?`; setting it shows the overflow button, and the system adds items that don't fit.
+
+**Not confirmed** (look up in the SDK, never guess):
+- Reserved-region APIs. The HIG compares them to iPad window controls. The documented API for those is UIKit
+  `UIView.LayoutRegion` (`layoutGuide(for:)`, `edgeInsets(for:)`, `.safeArea(cornerAdaptation:)`,
+  `.margins(cornerAdaptation:)`), but its docs don't yet mention the fold or cameras.
+- Arrangement-view types and any pose or fold-state query API. No public docs found.

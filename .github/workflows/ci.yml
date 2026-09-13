@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ripgrep and shellcheck
+        run: sudo apt-get install -y -qq ripgrep shellcheck >/dev/null
+
+      - name: shellcheck
+        run: shellcheck skills/iphone-duo-design/scripts/*.sh
+
+      - name: SKILL.md frontmatter
+        run: |
+          f=skills/iphone-duo-design/SKILL.md
+          head -1 "$f" | grep -qx -- '---'
+          grep -q '^name: iphone-duo-design$' "$f"
+          grep -q '^description: ' "$f"
+          lines=$(wc -l < "$f")
+          echo "SKILL.md: $lines lines"
+          [ "$lines" -le 150 ]
+
+      - name: Audit catches every marked anti-pattern and nothing in clean code
+        run: |
+          S=skills/iphone-duo-design/scripts/audit_duo_readiness.sh
+          for tool in rg grep; do
+            [ "$tool" = grep ] && export AUDIT_NO_RG=1
+            set +e
+            clean=$(bash "$S" tests/fixtures/Clean -q -n 0); clean_code=$?
+            patterns=$(bash "$S" tests/fixtures/Patterns -q -n 0); patterns_code=$?
+            set -e
+            [ "$clean_code" -eq 0 ] || { echo "$tool: false positives in tests/fixtures/Clean:"; echo "$clean"; exit 1; }
+            [ "$patterns_code" -eq 1 ] || { echo "$tool: expected exit 1 on Patterns, got $patterns_code"; exit 1; }
+            expected=$(grep -rn 'duo-bad' tests/fixtures/Patterns | grep -v 'must be flagged' | cut -d: -f1,2 | sed 's#^tests/fixtures/Patterns/##' | sort -u)
+            got=$(printf '%s\n' "$patterns" | sed -n 's/^    //p' | cut -d: -f1,2 | sort -u)
+            missed=$(comm -23 <(echo "$expected") <(echo "$got"))
+            unexpected=$(comm -13 <(echo "$expected") <(echo "$got"))
+            [ -z "$missed" ] || { echo "$tool missed:"; echo "$missed"; exit 1; }
+            [ -z "$unexpected" ] || { echo "$tool flagged unmarked lines:"; echo "$unexpected"; exit 1; }
+            echo "$tool: $(echo "$expected" | wc -l) marked lines caught, clean fixture clean"
+          done
+
+      - name: Audit output stays small on a large tree
+        run: |
+          S=skills/iphone-duo-design/scripts/audit_duo_readiness.sh
+          big=$(mktemp -d)
+          for i in $(seq 1 200); do
+            for f in tests/fixtures/*/*.swift; do cp "$f" "$big/$i-$(basename "$f")"; done
+          done
+          set +e
+          full=$(bash "$S" "$big" -q); summary=$(bash "$S" "$big" -s)
+          set -e
+          echo "default: $(printf '%s' "$full" | wc -c) bytes, summary: $(printf '%s' "$summary" | wc -c) bytes"
+          [ "$(printf '%s' "$full" | wc -c)" -lt 12000 ] || { echo "default output not capped"; exit 1; }
+          [ "$(printf '%s\n' "$summary" | grep -c '^    ')" -eq 0 ] || { echo "summary printed matches"; exit 1; }
+
+      - name: Same results with and without ripgrep
+        run: |
+          S=skills/iphone-duo-design/scripts/audit_duo_readiness.sh
+          set +e
+          with_rg=$(bash "$S" tests/fixtures -n 0)
+          without_rg=$(AUDIT_NO_RG=1 bash "$S" tests/fixtures -n 0)
+          set -e
+          [ "$with_rg" = "$without_rg" ] || { diff <(echo "$with_rg") <(echo "$without_rg"); exit 1; }
+
+      - name: No remote-install patterns in the skill
+        run: |
+          if grep -rnE 'curl |wget |\| *(ba)?sh|git clone|rm -rf' skills/ README.md; then
+            echo "Remote install or destructive command found"; exit 1
+          fi

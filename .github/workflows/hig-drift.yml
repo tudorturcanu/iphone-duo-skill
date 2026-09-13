@@ -1,0 +1,30 @@
+name: HIG drift
+
+# Apple's "Designing for iPhone Duo" article is new and will change. This fails when it does,
+# so references/ and SKILL.md get re-checked. Only a hash is stored, never Apple's text.
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare article hash
+        run: |
+          url=https://developer.apple.com/tutorials/data/design/human-interface-guidelines/designing-for-iphone-duo.md
+          curl -fsSL "$url" -o hig.md
+          now=$(sed '/^Copyright/,$d' hig.md | sha256sum | cut -d' ' -f1)
+          known=$(cat tests/hig-duo.sha256)
+          if [ "$now" != "$known" ]; then
+            echo "::warning::The HIG article changed. Review it, update references/ and SKILL.md, then update tests/hig-duo.sha256 to $now"
+            grep -A20 '^## Change log' hig.md || true
+            exit 1
+          fi
+          echo "HIG article unchanged ($now)"

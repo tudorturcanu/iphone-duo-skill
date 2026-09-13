@@ -1,0 +1,13 @@
+// !$*UTF8*$!
+{
+	objects = {
+		A1B2C3D4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_KEY_UIRequiresFullScreen = YES; // duo-bad
+				PRODUCT_NAME = Patterns;
+			};
+			name = Debug;
+		};
+	};
+}
