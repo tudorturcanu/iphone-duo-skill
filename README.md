@@ -24,7 +24,19 @@ This skill equips coding assistants to:
 
 ## ⚡ Quick Install
 
-### One-Line Install
+### Universal Agent Install (Recommended)
+
+Works across **Antigravity**, **Claude Code**, **Cursor**, **Codex**, and 20+ agents using `npx skills` ([skills.sh](https://skills.sh)):
+
+```bash
+# In your iOS project
+npx skills add tudorturcanu/iphone-duo-skill
+
+# Or globally on your Mac
+npx skills add tudorturcanu/iphone-duo-skill -g
+```
+
+### One-Line Shell Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/tudorturcanu/iphone-duo-skill/main/install.sh | bash
