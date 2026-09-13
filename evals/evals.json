@@ -1,0 +1,23 @@
+{
+  "skill_name": "iphone-duo-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "we're getting our notes app ready for the new iPhone Duo. the SwiftUI code is in NotesApp/ — can you go through it, fix whatever's going to break or look wrong on the Duo, and give me a short summary of what you changed and why",
+      "expected_output": "Fixed Swift files that compile, plus a summary. Replaces custom tab bar with TabView, removes UIScreen.main.bounds widths, uses even/adaptive grid columns, replaces custom ellipsis Menu and fixed spacers with ToolbarItemGroups and system overflow, gives toolbar items Label title+symbol, stops ignoring safe areas / hard-coded Dynamic Island padding, and does not invent iPhone Duo API names.",
+      "files": ["fixtures/NotesApp/NotesRootView.swift", "fixtures/NotesApp/NotesListView.swift"]
+    },
+    {
+      "id": 2,
+      "prompt": "Our photo library screen (UIKit, GalleryViewController.swift) looks broken on iPhone Duo when the device is open or half folded, and the toolbar is in the wrong place compared to Apple's apps. Please refactor it so it adapts properly and explain the changes.",
+      "expected_output": "Refactored GalleryViewController.swift that compiles, plus explanation. Removes hard-coded frames and UIScreen/idiom-based column logic, uses Auto Layout/safe area or compositional layout with column count from available width (even count), replaces custom bottom UIView toolbar with system toolbar/nav items, replaces fixedSpace with UIBarButtonItemGroup, moves custom ellipsis menu into additionalOverflowItems, gives items title + image, and doesn't invent Duo APIs.",
+      "files": ["fixtures/GalleryApp/GalleryViewController.swift"]
+    },
+    {
+      "id": 3,
+      "prompt": "I'm a designer working on a recipe app. Main nav is a tab bar with 5 tabs (Discover, Search, Saved, Grocery List, Profile). The key screen is Cooking Mode: step-by-step instructions, a big timer, and toolbar buttons for Previous Step, Next Step, Start Timer, Ingredients, and Share. Write me a short spec for how Cooking Mode should behave on iPhone Duo — closed, fully open, and half-folded standing on the kitchen counter. Save it as a markdown file.",
+      "expected_output": "A markdown spec covering outer display, inner display portrait/landscape, and half-folded poses. Controls on the side on outer/landscape, task-oriented view so tab bar minimizes and toolbar is kept, toolbar ordering and overflow priority (Next/Previous/Timer keep visibility, Share overflows), timer and steps split across the fold rather than straddling it, small adjustments not rearrangement, consistent control positions, title+symbol on items, no invented API names.",
+      "files": []
+    }
+  ]
+}
