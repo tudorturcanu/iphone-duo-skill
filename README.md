@@ -1,5 +1,6 @@
 # iPhone Duo Design & Implementation Skill
 
+[![skills.sh](https://skills.sh/b/tudorturcanu/iphone-duo-skill)](https://skills.sh/tudorturcanu/iphone-duo-skill)
 [![Antigravity Skill](https://img.shields.io/badge/Antigravity-Skill-blue.svg)](https://antigravity.google)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-orange.svg)](https://anthropic.com)
 [![Swift](https://img.shields.io/badge/Swift-6.0-green.svg)](https://swift.org)
