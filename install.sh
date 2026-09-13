@@ -10,7 +10,7 @@ usage() {
     echo "Usage: $0 [options]"
     echo ""
     echo "Options:"
-    echo "  --global, -g     Install globally for Antigravity (~/.gemini/config/skills/$SKILL_NAME) [Default]"
+    echo "  --global, -g     Install globally for Antigravity (~/.gemini/config/skills/$SKILL_NAME) [default]"
     echo "  --workspace, -w  Install in current workspace (.agents/skills/$SKILL_NAME)"
     echo "  --claude-global  Install globally for Claude Code (~/.claude/skills/$SKILL_NAME)"
     echo "  --claude-local   Install in current project for Claude Code (.claude/skills/$SKILL_NAME)"
@@ -63,6 +63,9 @@ case "$TARGET_TYPE" in
         ;;
 esac
 
+if [ "$TARGET_TYPE" = "global" ] && [ $# -eq 0 ]; then
+    echo "No target given; defaulting to Antigravity global. For Claude Code pass --claude-global or --claude-local."
+fi
 echo "=========================================================="
 echo "📦 Installing '$SKILL_NAME' to:"
 echo "   $DEST"
@@ -70,9 +73,14 @@ echo "=========================================================="
 
 mkdir -p "$(dirname "$DEST")"
 
-# Check if installing from local directory or remote git
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$SCRIPT_DIR/SKILL.md" ]; then
+# Install from a local checkout when run from one; otherwise clone.
+# BASH_SOURCE is empty when piped (curl ... | bash), so fall back to cloning.
+SCRIPT_SRC="${BASH_SOURCE[0]:-}"
+SCRIPT_DIR=""
+if [ -n "$SCRIPT_SRC" ] && [ -f "$SCRIPT_SRC" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SRC")" && pwd)"
+fi
+if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/SKILL.md" ]; then
     echo "Installing from local source repository..."
     rm -rf "$DEST"
     mkdir -p "$DEST"

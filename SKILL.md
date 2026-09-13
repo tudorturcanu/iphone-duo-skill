@@ -10,8 +10,10 @@ two displays, a hinge, many device poses, reserved regions, and bars that move t
 Your job as the agent is to make an app **adapt** to all of that. You should not build a
 separate "Duo mode."
 
-The full Apple HIG article is in `references/apple-hig-designing-for-iphone-duo.md`. Read it
-when you need exact wording, the diagrams' captions, or links to developer docs.
+A condensed reference of Apple's HIG article is in `references/apple-hig-designing-for-iphone-duo.md`.
+Read it when you need the full rule set, the list of confirmed API names, or links to the
+developer docs. The original article is at
+https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
 
 ## Mental model
 
@@ -43,6 +45,8 @@ When asked to make, check, or fix an app for iPhone Duo:
    - custom tab bars or toolbars drawn as views pinned to top or bottom instead of system `toolbar` / `TabView` / `UIToolbar` / `UITabBarController`
    - a homemade "…" overflow menu
    - hard-coded manual spacers between toolbar items
+   - image-only `UIBarButtonItem`s (no title for the overflow menu) and `NavigationView` (no split behavior)
+   - hard-coded status-bar / Dynamic Island padding instead of safe-area insets
    - orientation locks with no fill strategy (games)
 2. **Move to system components where possible.** Standard bars, split views, sheets, alerts, and
    menus get side placement, fold avoidance, and overflow behavior for free.

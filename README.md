@@ -24,46 +24,43 @@ This skill equips coding assistants to:
 
 ## ⚡ Quick Install
 
-### Universal Agent Install (Recommended)
+Pick the line for your agent. Each one clones the skill into the folder that agent scans for skills.
 
-Works across **Antigravity**, **Claude Code**, **Cursor**, **Codex**, and 20+ agents using `npx skills` ([skills.sh](https://skills.sh)):
-
+**Claude Code (global, all projects)**
 ```bash
-# In your iOS project
-npx skills add tudorturcanu/iphone-duo-skill
-
-# Or globally on your Mac
-npx skills add tudorturcanu/iphone-duo-skill -g
+curl -fsSL https://raw.githubusercontent.com/tudorturcanu/iphone-duo-skill/main/install.sh | bash -s -- --claude-global
 ```
 
-### One-Line Shell Install
-
+**Claude Code (this project only, shared with your team via git)**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/tudorturcanu/iphone-duo-skill/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/tudorturcanu/iphone-duo-skill/main/install.sh | bash -s -- --claude-local
 ```
 
-### Or Install via Git
-
-#### Antigravity (Workspace / Project-Level)
-Installs into your current iOS repository so your entire team shares the skill:
+**Antigravity (global)**
 ```bash
-git clone https://github.com/tudorturcanu/iphone-duo-skill.git .agents/skills/iphone-duo-design
+curl -fsSL https://raw.githubusercontent.com/tudorturcanu/iphone-duo-skill/main/install.sh | bash -s -- --global
 ```
 
-#### Antigravity (Global)
-Installs across all workspaces on your machine:
+**Antigravity (this workspace only)**
 ```bash
-git clone https://github.com/tudorturcanu/iphone-duo-skill.git ~/.gemini/config/skills/iphone-duo-design
+curl -fsSL https://raw.githubusercontent.com/tudorturcanu/iphone-duo-skill/main/install.sh | bash -s -- --workspace
 ```
 
-#### Claude Code
-```bash
-# Global
-git clone https://github.com/tudorturcanu/iphone-duo-skill.git ~/.claude/skills/iphone-duo-design
+<details>
+<summary>Manual install with git clone</summary>
 
-# Workspace
-git clone https://github.com/tudorturcanu/iphone-duo-skill.git .claude/skills/iphone-duo-design
-```
+| Agent | Scope | Command |
+|---|---|---|
+| Claude Code | global | `git clone https://github.com/tudorturcanu/iphone-duo-skill.git ~/.claude/skills/iphone-duo-design` |
+| Claude Code | project | `git clone https://github.com/tudorturcanu/iphone-duo-skill.git .claude/skills/iphone-duo-design` |
+| Antigravity | global | `git clone https://github.com/tudorturcanu/iphone-duo-skill.git ~/.gemini/config/skills/iphone-duo-design` |
+| Antigravity | workspace | `git clone https://github.com/tudorturcanu/iphone-duo-skill.git .agents/skills/iphone-duo-design` |
+| Any other agent | — | Clone anywhere and point the agent at `SKILL.md`. It is plain Markdown with a `name`/`description` frontmatter, the format used by Claude Code, Antigravity, Codex, Cursor, and other skill-aware tools. |
+
+Re-running the installer on an existing install pulls the latest version.
+</details>
+
+Once installed, the skill activates automatically when you mention iPhone Duo, the fold or hinge, device poses, reserved regions, or side/vertical toolbars. You can also invoke it directly with `/iphone-duo-design` in Claude Code.
 
 ---
 
@@ -81,27 +78,31 @@ git clone https://github.com/tudorturcanu/iphone-duo-skill.git .claude/skills/ip
 
 ## 🛠 Included Tools
 
-### 1. Automated Readiness Audit Script
-Run the automated scanner against any iOS codebase to detect common iPhone Duo anti-patterns:
+### Automated readiness audit
+
+Run the scanner against any iOS codebase. It works with `rg` or plain `grep`, skips `Pods`, `.build`, `DerivedData`, and `node_modules`, and exits `1` when it finds candidates so you can wire it into CI.
 
 ```bash
-./scripts/audit_duo_readiness.sh path/to/ios/project
+./scripts/audit_duo_readiness.sh path/to/ios/project        # full report
+./scripts/audit_duo_readiness.sh path/to/ios/project -q     # only categories with hits
 ```
 
-Detects:
-- ❌ Hardcoded frames (`CGRect(x: 0, y: 0, width: 390, ...)`)
-- ❌ `UIScreen.main.bounds` dependencies
-- ❌ `.userInterfaceIdiom == .phone` branching for layout size
-- ❌ Blanket `.ignoresSafeArea()` calls
-- ❌ Fixed toolbar spaces (`.fixedSpace`, manual Spacers)
-- ❌ Custom ellipsis overflow menus (`systemName: "ellipsis"`)
-- ❌ Odd column grid layouts that split down the fold
+It flags 13 categories of anti-pattern, grouped as:
+
+| Group | Examples |
+|---|---|
+| Display-specific sizing | `UIScreen.main.bounds`, hard-coded iPhone frames, three-digit fixed `.frame(width:)`, `userInterfaceIdiom` layout branches |
+| Safe areas & reserved regions | blanket `.ignoresSafeArea()`, magic-number Dynamic Island padding |
+| Bars & overflow | `.fixedSpace` and manual `Spacer()`s, custom `ellipsis` menus, hidden system tab bars, image-only `UIBarButtonItem`s, deprecated `NavigationView` |
+| The fold | odd grid column counts, orientation locks |
+
+Every hit is a candidate, not a verdict. The agent reads each one in context before changing it.
 
 ---
 
 ## 🧪 Testing & Evals
 
-The repository includes a complete evaluation suite with realistic test fixtures:
+Three benchmark prompts with realistic fixtures live in `evals/evals.json`. They are prompts plus expected outcomes, not an automated harness; run them with your agent and grade the result against `expected_output`.
 
 ```text
 ├── SKILL.md                          # Main instruction file
@@ -109,7 +110,7 @@ The repository includes a complete evaluation suite with realistic test fixtures
 ├── scripts/
 │   └── audit_duo_readiness.sh        # Fast bash audit tool
 ├── references/
-│   └── apple-hig-designing-for-iphone-duo.md # Complete Apple HIG reference
+│   └── apple-hig-designing-for-iphone-duo.md # Condensed HIG reference + confirmed API names
 ├── evals/
 │   └── evals.json                    # Benchmark evals (SwiftUI, UIKit, and Spec)
 └── fixtures/
@@ -130,6 +131,14 @@ Once installed, test the skill with prompts such as:
 > *"Write an engineering spec for an iPad/iPhone recipe app adapting to the iPhone Duo in book pose."*
 
 ---
+
+## 🙏 Attribution
+
+The guidance summarized in `references/` comes from Apple's Human Interface Guidelines article [Designing for iPhone Duo](https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo). The reference file is an original condensation written for agents, not a copy of Apple's text. iPhone, iPhone Duo, and Dynamic Island are trademarks of Apple Inc. This project is not affiliated with Apple.
+
+## 🤝 Contributing
+
+Found an anti-pattern the audit misses, or an API the HIG now names? Open an issue or PR. Keep `SKILL.md` under ~200 lines so it stays cheap for agents to load; put long material in `references/`.
 
 ## 📄 License
 
