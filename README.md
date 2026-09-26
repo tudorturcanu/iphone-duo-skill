@@ -86,9 +86,9 @@ Every hit is a candidate, not a verdict. The agent reads each one in context bef
 
 ## 🧪 Testing & Evals
 
-Five benchmark prompts live in `tests/evals/evals.json`, in the [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) format. Each has pass/fail `expectations` to grade against. `files` paths are relative to the repository root, not the skill folder. `tests/evals/trigger_evals.json` holds 20 queries (10 should trigger, 10 near misses such as Galaxy Fold or iPad Stage Manager) for tuning the description.
+Five benchmark prompts live in `tests/evals/evals.json`, in the [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) format. Each has pass/fail `expectations` to grade against. `files` paths are relative to the repository root, not the skill folder. `tests/evals/trigger_evals.json` holds 26 queries (13 should trigger, 13 near misses such as Galaxy Fold, visionOS, or iPad Stage Manager) for tuning the description.
 
-The prompts cover the SwiftUI fixture, the UIKit fixture, a design spec, already-clean code (no over-editing), and the exact fold APIs.
+The prompts cover the SwiftUI fixture, the UIKit fixture, a design spec, already-clean code (no over-editing), and the exact fold APIs. When running them, give the agent a copy of the fixture with `//` comment lines stripped (the `Clean` and `Patterns` headers describe the expected answer), and compare against a run without the skill. On the last benchmark (v1.2.0) the skill passed 96% of expectations against 63% without it; the biggest gaps were the design spec (9/10 vs 4/10) and the no-over-editing review (5/5 vs 2/5).
 
 CI validates the `SKILL.md` frontmatter (name, description length, `allowed-tools` syntax, version matching `CHANGELOG.md`) and the eval files, runs `shellcheck` on the audit script, and guards the script's accuracy in both directions, with `rg` and with `grep`:
 - every line marked `// duo-bad` in `tests/fixtures/Patterns/` must be flagged, and nothing else;

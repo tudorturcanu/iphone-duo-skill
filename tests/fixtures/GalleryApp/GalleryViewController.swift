@@ -7,7 +7,6 @@ final class GalleryViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Anti-pattern: Hardcoded device size
         view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
         view.backgroundColor = .systemBackground
         
@@ -16,7 +15,6 @@ final class GalleryViewController: UIViewController {
     }
     
     private func setupCollectionView() {
-        // Anti-pattern: Device idiom checks picking columns instead of adaptive size
         let columns: CGFloat = (UIDevice.current.userInterfaceIdiom == .phone) ? 3 : 5
         let spacing: CGFloat = 8
         let totalSpacing = spacing * (columns + 1)
@@ -40,7 +38,6 @@ final class GalleryViewController: UIViewController {
     }
     
     private func setupCustomBottomToolbar() {
-        // Anti-pattern: Custom bottom UIView toolbar pinned instead of UIToolbar/system toolbar
         bottomToolbarView = UIView()
         bottomToolbarView.backgroundColor = .secondarySystemBackground
         bottomToolbarView.translatesAutoresizingMaskIntoConstraints = false
@@ -53,13 +50,11 @@ final class GalleryViewController: UIViewController {
             bottomToolbarView.heightAnchor.constraint(equalToConstant: 70)
         ])
         
-        // Anti-pattern: Manual fixed space and symbol-only buttons without titles
         let shareButton = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: self, action: #selector(shareTapped))
         let fixedSpace = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
         fixedSpace.width = 30
         let deleteButton = UIBarButtonItem(image: UIImage(systemName: "trash"), style: .plain, target: self, action: #selector(deleteTapped))
         
-        // Anti-pattern: Custom ellipsis button for overflow
         let overflowButton = UIBarButtonItem(image: UIImage(systemName: "ellipsis"), style: .plain, target: self, action: #selector(overflowTapped))
         
         let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 50))
@@ -69,5 +64,16 @@ final class GalleryViewController: UIViewController {
     
     @objc private func shareTapped() {}
     @objc private func deleteTapped() {}
-    @objc private func overflowTapped() {}
+    @objc private func overflowTapped() {
+        let sheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        sheet.addAction(UIAlertAction(title: "Select", style: .default) { _ in self.selectTapped() })
+        sheet.addAction(UIAlertAction(title: "Add to Album", style: .default) { _ in self.addToAlbumTapped() })
+        sheet.addAction(UIAlertAction(title: "Slideshow", style: .default) { _ in self.slideshowTapped() })
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(sheet, animated: true)
+    }
+
+    private func selectTapped() {}
+    private func addToAlbumTapped() {}
+    private func slideshowTapped() {}
 }

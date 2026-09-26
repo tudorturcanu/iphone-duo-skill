@@ -18,12 +18,9 @@ struct NotesRootView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // Anti-pattern: Hardcoded Dynamic Island padding
             .padding(.top, 59)
-            // Anti-pattern: Fixed frame referencing UIScreen
             .frame(width: UIScreen.main.bounds.width)
             
-            // Anti-pattern: Homemade bottom tab bar pinned to bottom ignoring safe area
             HStack(spacing: 0) {
                 Button(action: { selectedTab = 0 }) {
                     VStack {

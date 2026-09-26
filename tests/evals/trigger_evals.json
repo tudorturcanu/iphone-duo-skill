@@ -78,5 +78,29 @@
   {
     "query": "my React Native app needs to support foldable Android phones and tablets",
     "should_trigger": false
+  },
+  {
+    "query": "my split view gets chopped in half when the new Apple phone opens like a book, how do I lay it out?",
+    "should_trigger": true
+  },
+  {
+    "query": "how should my camera app's UI behave when the iPhone is propped half-open on a table?",
+    "should_trigger": true
+  },
+  {
+    "query": "does my SwiftUI app need changes for the second screen on Apple's new folding phone?",
+    "should_trigger": true
+  },
+  {
+    "query": "adapt my SwiftUI app for visionOS ornaments and side toolbars",
+    "should_trigger": false
+  },
+  {
+    "query": "build cover-screen widgets for Galaxy Z Flip in Kotlin",
+    "should_trigger": false
+  },
+  {
+    "query": "my iPad app needs a dual-screen mode that mirrors to an external display via UIScene",
+    "should_trigger": false
   }
 ]

@@ -10,16 +10,16 @@
         "tests/fixtures/NotesApp/NotesListView.swift"
       ],
       "expectations": [
-        "Ran the audit script (or explicitly read the files) before editing",
         "No UIScreen.main remains in NotesApp/",
         "The homemade HStack tab bar is replaced by TabView with Tab/tabItem entries that have titles and symbols",
-        "The grid column count is even or adaptive (no count: 3)",
-        "The custom ellipsis Menu is gone; its actions are in ToolbarOverflowMenu or another system-overflow mechanism",
-        "No Spacer().frame(width:) or HStack of buttons inside a single ToolbarItem remains; items use ToolbarItemGroup",
-        "Every toolbar button uses Label (or Button(_:systemImage:)) with both a title and a symbol",
+        "The grid's column count is even whenever there is more than one column (a fixed 2/4 or computed-and-rounded count; a bare .adaptive GridItem does not pass)",
+        "All three actions from the custom ellipsis Menu (Sort by Date, Select Notes, Settings) still exist, now in ToolbarOverflowMenu or another system-overflow mechanism",
+        "No Spacer().frame(width:) and no HStack of buttons inside a single ToolbarItem remains",
+        "Every icon toolbar button has both a title and a symbol (Label or Button(_:systemImage:))",
         "No .ignoresSafeArea() on scrolling or interactive content and no hard-coded .padding(.top, 59)",
-        "Any Duo-specific API used is one of the names in SKILL.md or the reference (e.g. visibilityPriority, reservedRegions); nothing invented",
-        "The summary lists what was changed and says what could not be verified (e.g. no iPhone Duo simulator)"
+        "Uses at least one iPhone Duo bar API correctly (visibilityPriority on toolbar content, ToolbarOverflowMenu, axisBehavior, or toolbarVerticalCompressionBehavior)",
+        "Every Duo-specific API used exists in the skill's reference §6; nothing invented",
+        "The summary says what could not be verified (no build, no iPhone Duo simulator) and mentions building with the iOS 27.1 SDK"
       ]
     },
     {
@@ -30,14 +30,15 @@
         "tests/fixtures/GalleryApp/GalleryViewController.swift"
       ],
       "expectations": [
-        "No hard-coded CGRect(x: 0, y: 0, width: 390, height: 844) or UIScreen.main.bounds remains",
-        "Column count no longer depends on userInterfaceIdiom; it derives from available width and is even (or adaptive)",
-        "The custom bottom UIView and UIToolbar are removed; actions live in navigationItem / toolbarItems of a navigation controller",
-        "No .fixedSpace items remain; items are grouped with UIBarButtonItemGroup",
-        "The ellipsis button is removed; extra actions go through navigationItem.additionalOverflowItems",
-        "Every UIBarButtonItem has both a title and an image",
-        "Layout uses Auto Layout / safe area (no bottom constant of -70 compensating for the custom bar)",
-        "Any Duo-specific API used is one of the names in SKILL.md or the reference; nothing invented",
+        "No hard-coded 390x844 frame and no UIScreen.main remains",
+        "Column count no longer depends on userInterfaceIdiom; it derives from available width and is rounded to even on displays that can fold",
+        "The custom bottom UIView and UIToolbar are removed",
+        "The former bottom-bar actions (Share, Delete) are toolbar items of a navigation controller (toolbarItems / setToolbarItems), not moved into the navigation bar",
+        "No .fixedSpace items remain",
+        "The three ellipsis-menu actions (Select, Add to Album, Slideshow) are all reachable through navigationItem.additionalOverflowItems; the ellipsis button is gone",
+        "Every icon UIBarButtonItem has both a title and an image",
+        "Does not add features the user didn't ask for (new actions, data sources, cell classes beyond what the refactor needs)",
+        "Every Duo-specific API used exists in the skill's reference §6; nothing invented",
         "The explanation says what was verified and what was not"
       ]
     },
@@ -48,14 +49,15 @@
       "files": [],
       "expectations": [
         "The spec is saved as a markdown file",
-        "Covers outer display (closed), inner display portrait and landscape, and half-folded / tabletop",
+        "Covers outer display (closed), inner display portrait and landscape, and half-folded standing on the counter",
         "States bars are on the side on the outer display and inner landscape, horizontal in inner portrait",
-        "Treats Cooking Mode as task-focused: tab bar minimizes, toolbar kept (may cite toolbarVerticalCompressionBehavior(.prefersToolbarItems))",
+        "Treats Cooking Mode as task-focused: when space runs out the tab bar minimizes and the toolbar is kept",
         "Gives a visibility priority order: Next/Previous/Start Timer stay visible longest and Share overflows first",
-        "In the half-folded tabletop pose, content (step text) sits in the top half and controls/timer in the bottom half, not across the fold",
+        "In the tabletop pose, the step text and timer readout sit in the upper half and nothing important straddles the fold",
         "Asks for small adjustments rather than rearranging, with consistent control positions across poses",
         "Every toolbar item has a title and a symbol",
-        "Does not invent API names; any API mentioned exists in SKILL.md or the reference"
+        "Is written for a designer: behavior in plain words, API names (if any) confined to a short notes section, and under about 120 lines",
+        "Makes no false claims about iPhone Duo (e.g. no bottom toolbar on the closed outer display, no layout driven by the hinge angle, no custom ellipsis menu)"
       ]
     },
     {
@@ -68,9 +70,10 @@
       ],
       "expectations": [
         "Ran the audit script and reported that it found nothing",
-        "Did not rewrite working code: CleanView.swift is unchanged or changes are small and each is justified",
+        "CleanView.swift and Info.plist are unchanged, or each change is small and justified",
         "Did not add Duo-specific code the file doesn't need (no hinge handling, no per-pose branches)",
-        "Lists the checklist items that still need a simulator or device"
+        "Every factual claim about the code is correct (e.g. does not say the Done button has a symbol)",
+        "Lists what still needs a simulator or device, covering at least: outer display side bars, partially folded, Split View, and outer/inner state"
       ]
     },
     {
@@ -79,11 +82,13 @@
       "expected_output": "Uses UIView.reservedRegions(kind: .division) to find the fold and lay out palettes clear of each region's frame, re-running in layoutSubviews; notes .occlusion for cameras and .includeInactive; mentions UIHingeInteraction for hinge status but says layout should come from reserved regions; notes iOS 27.1 availability. No invented APIs.",
       "files": [],
       "expectations": [
-        "Uses UIView.reservedRegions(kind: .division) (exact name) to get the fold's frame",
-        "Moves the palettes in layoutSubviews / viewDidLayoutSubviews (or equivalent) so they update when the pose changes",
-        "Mentions UIHingeInteraction (or UIHinge.Status .partiallyOpen) for fold state, but recommends reserved regions for layout",
+        "Uses UIView.reservedRegions(kind: .division) (exact name) to get the fold's frame, in the view's own coordinate space",
+        "Reads the regions in layoutSubviews / viewDidLayoutSubviews (or equivalent), and any extra relayout trigger it adds is installed and would compile (UIHingeInteraction(updateHandler:), update.hinge)",
+        "Moves the palettes as one group to a side of the fold rather than scattering them",
+        "Mentions UIHingeInteraction / UIHinge.Status .partiallyOpen for fold state, but recommends reserved regions for layout",
+        "Describes default query behavior correctly: only active regions unless options: .includeInactive",
         "Wraps new APIs in if #available(iOS 27.1, *) or states the iOS 27.1 requirement",
-        "Uses no API names outside SKILL.md and the reference (no invented FoldObserver, hingeState, etc.)"
+        "Uses no API names outside the skill's reference and standard UIKit"
       ]
     }
   ]

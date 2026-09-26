@@ -2,6 +2,31 @@
 
 All notable changes to this skill are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.2.0] - 2026-09-26
+
+Two rounds of benchmarking (5 evals, with vs without the skill, graded by independent agents) drove these changes.
+Pass rate with the skill: 96%, without: 63%.
+
+### Added
+- Reference §7 "Code patterns": UIKit bar items, fold-aware `layoutSubviews`, and an even-column grid helper.
+- Workflow: build or typecheck changed files when Xcode is available; guidance for design specs (plain behavior,
+  API names in a short notes section) and scope (move actions, never drop them; add nothing unrequested).
+- 6 harder trigger queries (paraphrases without "Duo", visionOS / Galaxy Z Flip / external-display near misses).
+
+### Changed
+- Grids: compute the column count and round to even whenever a fold can exist; `.adaptive` columns alone can be odd.
+- Reserved regions: frames are in the queried view's coordinates, no change callback is documented, read them
+  during layout.
+- Bars: keep each action in the bar it came from (bottom-bar actions become toolbar items). Text actions such as
+  Done may stay text-only.
+- The outer display's side bar is on the camera's physical side, not "trailing" (it doesn't flip for RTL). Tabletop
+  is a landscape pose, so bars stay on the side.
+- Arrangement views: only overlay moves its views to either side of the fold; split adjusts around it.
+- Availability: `visibilityPriority`, `ToolbarOverflowMenu`, `.topBarPinnedTrailing` are iOS 27.0; the rest 27.1.
+- Description names paraphrases (folding, book-style iPhone) and excludes visionOS, external displays, Galaxy Z Flip.
+- Evals: sharper expectations; fixture comments that gave answers away removed; the gallery's "…" menu now has
+  real actions to preserve.
+
 ## [1.1.0] - 2026-09-26
 
 Apple revised the HIG article after 1.0.0 (without a change-log entry) and published the iPhone Duo APIs

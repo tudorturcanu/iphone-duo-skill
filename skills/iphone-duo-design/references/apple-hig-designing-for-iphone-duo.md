@@ -30,6 +30,7 @@ text or images. Read the sources for exact wording and diagrams:
 4. [Vertical controls](#4-vertical-controls)
 5. [Beyond the HIG](#5-beyond-the-hig-developer-article-and-tech-talks): SDK, screens, bars, displacement
 6. [API reference](#6-api-reference): exact names and signatures
+7. [Code patterns](#7-code-patterns): UIKit bars, fold-aware layout, even-column grids
 
 ## 1. What the device is
 
@@ -287,3 +288,65 @@ No group-level visibility priority is documented on `UIBarButtonItemGroup`; set 
 Also confirmed by the HIG: `NavigationSplitView`, `UISplitViewController`, `ToolbarItemGroup`,
 `UIBarButtonItemGroup`, `Label`, `UIBarButtonItem`, `GeometryProxy.safeAreaInsets`, `UIView.safeAreaInsets`.
 Anything else Duo-specific: look it up in the SDK and never guess.
+
+## 7. Code patterns
+
+Uncompiled sketches built only from the APIs in §6. Adapt names to the project.
+
+**UIKit bars.** Title + image, groups instead of spacers, extras in the system overflow. Bottom-bar actions stay
+toolbar items (`toolbarItems`); top-bar actions stay navigation items.
+
+```swift
+// UIKit: title + image, groups instead of spacers, extras in the system overflow.
+let compose = UIBarButtonItem(title: "Compose", image: UIImage(systemName: "square.and.pencil"),
+                              primaryAction: UIAction { [weak self] _ in self?.compose() }, menu: nil)
+compose.visibilityPriority = .high
+navigationItem.trailingItemGroups = [UIBarButtonItemGroup(barButtonItems: [compose], representativeItem: nil)]
+navigationItem.additionalOverflowItems = UIDeferredMenuElement.uncached { done in
+    done([UIAction(title: "Print", image: UIImage(systemName: "printer")) { _ in }])
+}
+let arrangement = UIArrangementViewController()   // root of a UINavigationController; .secondary works the same
+arrangement.setViewController(PlayerViewController(), for: .primary)
+```
+
+**Fold-aware custom layout (UIKit).** Regions are in this view's coordinates. Re-read them on every layout pass;
+no change callback is documented.
+
+```swift
+override func layoutSubviews() {
+    super.layoutSubviews()
+    let safe = bounds.inset(by: safeAreaInsets)
+    var target = safe                                          // where the palette group may sit
+    if #available(iOS 27.1, *) {
+        // Active fold only: nothing moves while the device is flat.
+        if let fold = reservedRegions(kind: .division).first?.frame {
+            if fold.height >= fold.width {                     // vertical fold (book pose): use the trailing half
+                target = CGRect(x: fold.maxX, y: safe.minY, width: safe.maxX - fold.maxX, height: safe.height)
+            } else {                                           // horizontal fold (tabletop): controls go below
+                target = CGRect(x: safe.minX, y: fold.maxY, width: safe.width, height: safe.maxY - fold.maxY)
+            }
+        }
+    }
+    palette.center = CGPoint(x: target.midX, y: target.midY)  // move the whole group together
+    // Also keep `palette.frame` clear of reservedRegions(kind: .occlusion) (cameras) the same way.
+}
+```
+
+**Even-column grid (UIKit compositional layout).**
+
+```swift
+func columnCount(for width: CGFloat, minItemWidth: CGFloat = 100, spacing: CGFloat = 2) -> Int {
+    var count = max(1, Int((width + spacing) / (minItemWidth + spacing)))
+    if #available(iOS 27.1, *),
+       !collectionView.reservedRegions(kind: .division, options: .includeInactive).isEmpty,
+       count > 1, count % 2 == 1 {
+        count += 1                                            // the fold falls between two columns
+    }
+    return count
+}
+// Width: collectionView.bounds.inset(by: collectionView.safeAreaInsets).width, per side, never left * 2.
+// Rebuild the layout when the width or size class changes (viewDidLayoutSubviews / registerForTraitChanges).
+```
+
+**SwiftUI.** Read regions inside a `GeometryReader` (`proxy.reservedRegions(kind: .division)`) or pass them to a
+custom `Layout`; they're mirrored for right-to-left by default (`layoutDirectionBehavior: .fixed` to opt out).
