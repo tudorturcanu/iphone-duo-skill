@@ -45,7 +45,8 @@ GRID='GridItem\(([^()]|\([^()]*\))*\)'
 # title | regex | fix. One row per category, most severe first. Regexes are POSIX ERE.
 # Lines tagged "[...]" at the end come from the context passes below.
 CHECKS=(
-    "App opts out of resizing|\[UIRequiresFullScreen\]$|Remove UIRequiresFullScreen; the app must resize across displays and Split View."
+    "App opts out of resizing|\[UIRequiresFullScreen\]$|Honored, but the app still resizes on open/close and in Split View. Drop it and make the layout resize."
+    "App not on the UIScene life cycle|\[no UIScene life cycle\]$|Built with the iOS 27 SDK, it won't launch. Add a UIApplicationSceneManifest and a scene delegate (TN3187)."
     "Screen bounds or main screen used|(UIScreen\.main([^A-Za-z]|$)|[Ss]creen\??\.(bounds|nativeBounds))|Size from the view or scene; use traitCollection.displayScale. UIScreen.main is ambiguous with two displays."
     "Hard-coded iPhone dimensions|CG(Rect|Size)\(.*[^0-9.](390|844|375|812|414|896|428|926|430|932|393|852|402|874)$N|Use Auto Layout or safe areas."
     "Large fixed frame (>= 300 pt)|\.frame\([^)]*(^|[^A-Za-z])(width|height|minWidth|minHeight):[[:space:]]*([3-9][0-9]{2}|[1-9][0-9]{3,})$N|Let containers size from available space; maxWidth caps are fine."
@@ -107,7 +108,16 @@ search_swift() {
 # Checks that need to know whether a line sits inside a .toolbar { } / ToolbarItem(Group) { } block.
 # Brace context, so grep can't do them: stray Spacer()s, symbol-only items, and stacks of controls in one ToolbarItem.
 toolbar_context() {
-    { grep -E 'Spacer\(\)|[.]toolbar|ToolbarItem' "$SWIFT" || [ $? -eq 1 ]; } | cut -d: -f1 | uniq | tr '\n' '\0' > "$LIST"
+    # List the files directly, NUL-separated: file names may contain ':' or spaces.
+    local pattern='Spacer\(\)|[.]toolbar|ToolbarItem'
+    if [ -z "${AUDIT_NO_RG:-}" ] && command -v rg >/dev/null 2>&1; then
+        local globs=(--glob '*.swift')
+        for d in "${PRUNE[@]}"; do globs+=(--glob "!$d"); done
+        rg -l --null "${globs[@]}" -e "$pattern" . > "$LIST" || [ $? -eq 1 ] || return 2
+    else
+        grep -rlE --null --include='*.swift' "${GREP_EXCLUDES[@]}" --exclude-dir='*.xcodeproj' --exclude-dir='*.xcworkspace' \
+            -e "$pattern" . > "$LIST" || [ $? -eq 1 ] || return 2
+    fi
     [ -s "$LIST" ] || return 0
     # shellcheck disable=SC2016 # awk program, not shell
     xargs -0 awk '
@@ -153,6 +163,16 @@ full_screen_opt_out() {
     ' < "$LIST"
 }
 
+# A UIKit app delegate with no scene configuration anywhere: UIScene is required from the iOS 27 SDK (TN3187).
+# SwiftUI `App` structs, a scene manifest in Info.plist / build settings, or configurationForConnecting all count.
+scene_life_cycle() {
+    if [ -s "$FILES" ] && xargs -0 grep -lF UIApplicationSceneManifest < "$FILES" 2>/dev/null | grep -q .; then return 0; fi
+    local swift_opts=(--include='*.swift' "${GREP_EXCLUDES[@]}" --exclude-dir='*.xcodeproj' --exclude-dir='*.xcworkspace')
+    if grep -rqE "${swift_opts[@]}" -e 'configurationForConnecting|:[[:space:]]*App[[:space:]]*\{' . ; then return 0; fi
+    { grep -rnE "${swift_opts[@]}" -e '(class|struct)[[:space:]].*UIApplicationDelegate' . || [ $? -eq 1 ]; } \
+        | sed 's/$/  [no UIScene life cycle]/'
+}
+
 # Exit 1 from rg/grep means "no matches"; anything higher is a real error.
 set +e
 (
@@ -161,6 +181,7 @@ set +e
     search_swift > "$SWIFT"; rc=$?; [ "$rc" -le 1 ] || exit "$rc"
     toolbar_context || exit 2
     full_screen_opt_out || exit 2
+    scene_life_cycle || exit 2
     exit 0
 ) > "$EXTRA"
 rc=$?

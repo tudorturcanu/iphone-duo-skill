@@ -8,8 +8,9 @@ text or images. Read the sources for exact wording and diagrams:
 
 - HIG article: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
   (Markdown version: https://developer.apple.com/tutorials/data/design/human-interface-guidelines/designing-for-iphone-duo.md).
-  Last checked against the source on 2026-09-26. Apple revised the article after 2026-09-13 without adding a
-  change-log entry (it now names the reserved-region, arrangement-view, and compression APIs).
+  Last checked against the source on 2026-09-26. Its content changed after 2026-09-13 (tracked by hash in
+  `tests/hig-duo.sha256`) while its change log still lists only September 9; it now names the reserved-region,
+  arrangement-view, and compression APIs.
 - Developer article: https://developer.apple.com/documentation/technologyoverviews/preparing-your-app-for-iphone-duo
 - Related: [Designing for iOS](https://developer.apple.com/design/human-interface-guidelines/designing-for-ios),
   [Layout](https://developer.apple.com/design/human-interface-guidelines/layout),
@@ -28,7 +29,7 @@ text or images. Read the sources for exact wording and diagrams:
 2. [Best practices](#2-best-practices-the-headline-rules)
 3. [Dynamic layouts](#3-dynamic-layouts): reserved regions, folding, split and arrangement views
 4. [Vertical controls](#4-vertical-controls)
-5. [Beyond the HIG](#5-beyond-the-hig-developer-article-and-tech-talks): SDK, screens, bars, displacement
+5. [Beyond the HIG](#5-beyond-the-hig-developer-article-and-tech-talks): SDK, screens, bars, displacement, scenes, testing
 6. [API reference](#6-api-reference): exact names and signatures
 7. [Code patterns](#7-code-patterns): UIKit bars, fold-aware layout, even-column grids
 
@@ -83,8 +84,9 @@ controls). Three of them:
 | Inner front camera | Only while the camera is active | Invisible when inactive; the UI shifts aside when it activates. |
 | Folding region | Only while partially open | Splits the inner display into usable areas on either side of the center. |
 
-- Alerts, context menus, and sheets move around the fold on their own. Split views
-  rebalance column widths and margins to match the inner display's symmetry.
+- Alerts, context menus, and sheets move around the fold on their own (Apple DTS: folded, sheets move to the
+  leading edge; flat, they're centered). Split views rebalance column widths and margins to match the inner
+  display's symmetry. No traits or safe-area insets come from the fold by default.
 - Custom components use the reserved-region APIs to keep important elements clear:
   SwiftUI `ReservedRegion` (from `GeometryProxy.reservedRegions(kind:options:layoutDirectionBehavior:)`),
   UIKit `UIView.ReservedRegion` (from `UIView.reservedRegions(kind:options:)`). Kinds: `.division` (the fold)
@@ -123,8 +125,9 @@ Guidance:
   arrangement; `ZStack` → overlay arrangement.
 - Split fits main/detail; overlay fits foreground/background (a player over its queue).
 - Arrangement views don't navigate. Put a `NavigationStack` / `TabView` (or a
-  `UINavigationController`) around them. Don't place one inside a `NavigationSplitView`,
-  `List`, or `ScrollView`, where part of it could become unreachable.
+  `UINavigationController`) around them. The developer article says not to place one inside a
+  `NavigationSplitView`, `List`, or `ScrollView`, where part of it could become unreachable. (The HIG names
+  navigation split views among the containers to put around one; if you do, keep the arrangement fully reachable.)
 - Developer docs: SwiftUI `ArrangementView`, UIKit `UIArrangementViewController`. See §6.
 
 ## 4. Vertical controls
@@ -190,10 +193,12 @@ Rules:
 **Build and screens**
 - Build with the latest Xcode (iOS 27.1 SDK). Older builds don't extend under the status bar and camera, and
   don't get side bars.
-- `UIScreen.main` is ambiguous on a two-display device and will be deprecated. Use the view or scene bounds,
+- `UIScreen.main` is deprecated since iOS 26.0 and ambiguous on a two-display device (talk 111461 still says
+  "will be deprecated"; the API docs list it as deprecated). Use the view or scene bounds,
   `window?.windowScene?.screen`, and `traitCollection.displayScale`.
 - `UIRequiresFullScreen` is still honored, but the app resizes anyway when the device opens or closes.
-- The inner display doesn't honor supported interface orientations; locked apps are scaled. Don't branch
+- Orientation locks: talk 111461 says both that the inner display doesn't honor supported orientations and that
+  locked apps are scaled there. Either way, don't rely on the lock. Don't branch
   layout on `userInterfaceIdiom` or interface orientation. Use size classes with automatic trait tracking.
 - Safe-area insets differ per side. Use `bounds.inset(by: safeAreaInsets)`, not `width - insets.left * 2`.
 - Corners: `ConcentricRectangle` (SwiftUI) and `UICornerConfiguration` (UIKit) follow the new screen shapes.
@@ -221,21 +226,47 @@ Rules:
   `traitCollection.verticalBarEdge` (`.leading`, `.trailing`, `.unspecified`).
 - Hero or background images extend under the side bar with `backgroundExtensionEffect()` / `UIBackgroundExtensionView`.
 - Information-dense apps can show the tab bar as a sidebar on the inner display:
-  `.defaultTabBarPlacement(.sidebar)` / `tabBarController.sidebar.preferredPlacement = .sidebar`.
+  `TabView { … }.tabViewStyle(.sidebarAdaptable).defaultTabBarPlacement(.sidebar)` (27.0; takes an
+  `AdaptableTabBarPlacement`) / `tabBarController.sidebar.preferredPlacement = .sidebar`.
 
 **Displacement and poses**
 - When the fold would cover something, move the smallest meaningful scope and move related elements together.
 - Continuous scrolling content (feeds, articles, lists) doesn't need to avoid the fold.
-- Grids: widen the spacing at the fold and keep the outer margins. Query inactive divisions
-  (`options: .includeInactive`) to choose an even column count whenever a fold exists.
+- Grids: query inactive divisions (`options: .includeInactive`) to prefer an even column count whenever a fold
+  exists (talk 111463). Apple DTS doesn't recommend making scrolling grids avoid the fold; there's no automatic fold
+  avoidance in `UICollectionView`. Adjust only sections that don't scroll across the fold, from the collection
+  view's reserved regions.
+- Poses: the inner display is wider than tall when opened like a book, so **book pose (vertical fold) is landscape**
+  with side bars, and **tabletop / laptop pose (horizontal fold) is portrait** with horizontal bars.
 - Book pose: displaced alerts go to the trailing side. Tabletop pose: the top half suits content viewed from a
   distance, the bottom half suits controls. A tabletop layout is optional and keeps the same controls.
 - Audit centered layouts: they're what the fold cuts through.
 - Hinge state (`onHingeChange` / `UIHingeInteraction`) is for interactions, such as using the hinge angle as an input.
   Don't drive layout from it.
 
-**Camera and other scenes** (outside this skill's layout focus): see *Choosing a camera by the direction it
+**Scenes and state**
+- Built with the SDK after iOS 26, an app that hasn't adopted the UIScene life cycle won't launch (TN3187). SwiftUI
+  `App`s already use scenes; UIKit apps need a `UIApplicationSceneManifest` or `configurationForConnecting`.
+- Opening or closing doesn't change `scenePhase` for a full-screen app: the scene just resizes through size-class
+  and trait changes. With two windows on the inner display, closing keeps the most recent one active and moves the
+  other to inactive, then background (Apple DTS). Keep UI state in the model so it survives resizes.
+- `ArrangementView` shows only one view when its split axes can't fit the aspect ratio, pose, or compact size
+  class: the one with the higher `.layoutPriority`, else the primary (Apple DTS). Observe `\.splitArrangementAxis`
+  and keep the hidden view's actions reachable elsewhere.
+- `toolbarVerticalBehavior` is resolved per window or presentation (a `NavigationStack` uses its top view, a
+  `TabView` its selected tab), so disabling it for one immersive screen belongs on a full-screen cover or sheet.
+
+**Testing**
+- iPhone Duo SDK and simulator: Xcode 27.1 beta only (the 27.2 beta notes say to use 27.1). Poses come from Device
+  Hub; Xcode Previews have a "Display" override for the outer display.
+- Simulator known issues (Xcode 27.1 notes): StandBy unavailable, most app extensions (widgets, Live Activities)
+  can't run or be debugged. Verify those on a device.
+- Screenshots: `xcrun simctl io <device> enumerate` lists displays; pass `screenshot --display=<id>` to capture the
+  one in use.
+
+**Camera and other topics** (outside this skill's layout focus): see *Choosing a camera by the direction it
 faces* (AVKit) and *Registering a camera capture accessory on iPhone Duo* (AVFoundation), and tech talks 111464–111465.
+Don't hard-code "Face ID" in UI text; read `LAContext().biometryType`.
 
 ## 6. API reference
 
@@ -248,8 +279,9 @@ Checked against Apple's developer docs on 2026-09-26. **iOS 27.1, beta** unless 
 - UIKit: `UIView.reservedRegions(kind: UIView.ReservedRegion.Kind, options: UIView.ReservedRegion.QueryOptions = [])
   -> [UIView.ReservedRegion]`.
 - Region properties: `frame` (includes margins), `margins`, `isActive`, `kind`, `id`. Kinds: `.division`,
-  `.occlusion`. Options: `.includeInactive` (active regions only by default). The fold is active only while
-  partially folded.
+  `.occlusion`. Options: `.includeInactive` (active regions only by default, per `QueryOptions` and talk 111463;
+  the `ReservedRegion` overview's "regardless of whether they are currently active" contradicts both). The fold is
+  active only while partially folded; when flat it's inactive with zero width.
 
 **Arrangement views**
 - SwiftUI: `ArrangementView<Primary, Secondary>`, written `ArrangementView { Primary() } secondary: { Secondary() }`.
@@ -258,8 +290,8 @@ Checked against Apple's developer docs on 2026-09-26. **iOS 27.1, beta** unless 
 - Split sizing: `.splitArrangementLayoutRatio(_:)`, `.splitArrangementLayoutSize(minWidth:…)`,
   `.splitArrangementFixedLayoutSize(horizontal:vertical:)`. Overlay: `.overlayArrangementEdge(_:)` picks the
   horizontal edge a view takes when side by side.
-- Environment: `\.overlayArrangementZIndex` (`Int`; greater than 0 means the view is overlaid, e.g. collapse a
-  queue), `\.splitArrangementAxis`.
+- Environment: `\.overlayArrangementZIndex` (`Int`; greater than 0 means this view is drawn on top, so it can
+  collapse itself, as talk 111463 does with an Up Next queue placed in the primary slot), `\.splitArrangementAxis`.
 - UIKit: `UIArrangementViewController()`; `setViewController(_:for: .primary / .secondary, animated:)`;
   `updateArrangement(_:animated:)` with `UISplitArrangement` (default) or `UIOverlayArrangement`, e.g.
   `.split.axes(.horizontal)`; `state(for:)` returns a `ViewState?` with `isHidden`, `splitAxis`, `zIndex`.
@@ -319,7 +351,8 @@ override func layoutSubviews() {
     var target = safe                                          // where the palette group may sit
     if #available(iOS 27.1, *) {
         // Active fold only: nothing moves while the device is flat.
-        if let fold = reservedRegions(kind: .division).first?.frame {
+        // Filter isActive too: one doc overview says inactive regions can be returned by default.
+        if let fold = reservedRegions(kind: .division).first(where: \.isActive)?.frame {
             if fold.height >= fold.width {                     // vertical fold (book pose): use the trailing half
                 target = CGRect(x: fold.maxX, y: safe.minY, width: safe.maxX - fold.maxX, height: safe.height)
             } else {                                           // horizontal fold (tabletop): controls go below
@@ -346,6 +379,7 @@ func columnCount(for width: CGFloat, minItemWidth: CGFloat = 100, spacing: CGFlo
 }
 // Width: collectionView.bounds.inset(by: collectionView.safeAreaInsets).width, per side, never left * 2.
 // Rebuild the layout when the width or size class changes (viewDidLayoutSubviews / registerForTraitChanges).
+// The grid scrolls, so it doesn't need to avoid the fold: even columns are enough (Apple DTS).
 ```
 
 **SwiftUI.** Read regions inside a `GeometryReader` (`proxy.reservedRegions(kind: .division)`) or pass them to a

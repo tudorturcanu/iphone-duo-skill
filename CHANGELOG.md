@@ -2,6 +2,34 @@
 
 All notable changes to this skill are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.2.1] - 2026-09-26
+
+A claim-by-claim fact-check of both files against Apple's docs, tech talks, and Apple forum answers, plus a
+review of community resources and other iPhone Duo skills.
+
+### Fixed
+- Poses: the book pose (vertical fold) is landscape with side bars; the tabletop / laptop pose (horizontal fold) is
+  portrait with horizontal bars and controls in the bottom half. 1.2.0 had tabletop as landscape.
+- `UIScreen.main` is already deprecated (iOS 26.0), and on iPhone Duo its bounds keep the outer display's size.
+- Grids: Apple DTS doesn't recommend making scrolling grids avoid the fold. The unsourced "widen the gap at the
+  fold" advice is gone; even column counts stay.
+- The Duo SDK and simulator ship only in Xcode 27.1 beta (27.2 beta doesn't include them).
+- `overlayArrangementZIndex > 0` marks the view drawn on top, which is the one that collapses itself.
+- `.defaultTabBarPlacement(.sidebar)` needs `.tabViewStyle(.sidebarAdaptable)`.
+- Orientation locks and `UIRequiresFullScreen` wording now matches what Apple actually says.
+- The fold-aware sample filters `isActive`, since one doc overview contradicts the default active-only query.
+- Audit: file names with colons no longer make the script fail.
+
+### Added
+- Audit check: a UIKit app delegate without the UIScene life cycle won't launch with the iOS 27 SDK (TN3187).
+- Scenes and state (folding is a resize, not a `scenePhase` change), `ArrangementView` collapsing to one view,
+  sheets moving to the leading edge when folded, `toolbarVerticalBehavior` resolving per window or presentation.
+- Testing: simulator known issues, capturing the right display with `simctl io … --display`, Previews "Display".
+- CI: a regression test for paths with spaces and colons.
+
+### Changed
+- SKILL.md limit raised from 150 to 160 lines for the launch-blocker and verification guidance.
+
 ## [1.2.0] - 2026-09-26
 
 Two rounds of benchmarking (5 evals, with vs without the skill, graded by independent agents) drove these changes.

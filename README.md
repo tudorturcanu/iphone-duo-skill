@@ -70,11 +70,11 @@ bash $S path/to/ios/project -q       # up to 5 matches per category, hide clean 
 bash $S path/to/ios/project -n 0     # every match
 ```
 
-It flags 19 categories of anti-pattern, grouped as:
+It flags 20 categories of anti-pattern, grouped as:
 
 | Group | Examples |
 |---|---|
-| Resizing opt-out | `UIRequiresFullScreen` in `Info.plist` or build settings |
+| Launch & resizing | a UIKit app delegate with no UIScene life cycle (won't launch with the iOS 27 SDK), `UIRequiresFullScreen` in `Info.plist` or build settings |
 | Display-specific sizing | any `UIScreen.main`, `screen.bounds` / `nativeBounds`, hard-coded iPhone dimensions, fixed frames ≥ 300 pt, `userInterfaceIdiom` and device-model checks, `UIDevice.current.orientation` layout branches |
 | Safe areas & reserved regions | blanket `.ignoresSafeArea()` / `(.container, edges: .all)`, `insets.left * 2` math, hard-coded status bar and home indicator insets |
 | Bars & overflow | custom `UIToolbar` / `UITabBar` / `UINavigationBar` and homemade tab bars, `.fixedSpace`, `Spacer()` between toolbar items, several controls in one `ToolbarItem`, symbol-only items (SwiftUI and UIKit), custom `ellipsis` menus, hidden system tab bars, disabled side bars, deprecated `NavigationView` |
@@ -137,7 +137,7 @@ The guidance summarized in `skills/iphone-duo-design/references/` comes from App
 
 ## 🤝 Contributing
 
-Found an anti-pattern the audit misses, or an API Apple has added or renamed? Open an issue or PR. Keep `skills/iphone-duo-design/SKILL.md` under 150 lines (CI enforces it) so it stays cheap for agents to load; put long material in `references/`. Security issues: see [SECURITY.md](SECURITY.md).
+Found an anti-pattern the audit misses, or an API Apple has added or renamed? Open an issue or PR. Keep `skills/iphone-duo-design/SKILL.md` at 160 lines or fewer (CI enforces it) so it stays cheap for agents to load; put long material in `references/`. Security issues: see [SECURITY.md](SECURITY.md).
 
 ## 📄 License
 

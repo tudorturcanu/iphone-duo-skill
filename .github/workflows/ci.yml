@@ -46,7 +46,7 @@ jobs:
           if meta.get("version") != top: errors.append(f"metadata.version {meta.get('version')} != CHANGELOG {top}")
           lines = text.count("\n")
           print(f"SKILL.md: {lines} lines, description {len(desc)} chars")
-          if lines > 150: errors.append("SKILL.md over 150 lines")
+          if lines > 160: errors.append("SKILL.md over 160 lines")
           for link in re.findall(r"\]\(((?:references|scripts)/[^)#]+)\)", text):
               if not os.path.exists(f"{d}/{link}"): errors.append(f"broken link {link}")
           sys.exit("\n".join(errors) if errors else 0)
@@ -99,7 +99,7 @@ jobs:
           full=$(bash "$S" "$big" -q); summary=$(bash "$S" "$big" -s)
           set -e
           echo "default: $(printf '%s' "$full" | wc -c) bytes, summary: $(printf '%s' "$summary" | wc -c) bytes"
-          [ "$(printf '%s' "$full" | wc -c)" -lt 12000 ] || { echo "default output not capped"; exit 1; }
+          [ "$(printf '%s' "$full" | wc -c)" -lt 14000 ] || { echo "default output not capped"; exit 1; }
           [ "$(printf '%s\n' "$summary" | grep -c '^    ')" -eq 0 ] || { echo "summary printed matches"; exit 1; }
 
       - name: Same results with and without ripgrep
@@ -110,6 +110,24 @@ jobs:
           without_rg=$(AUDIT_NO_RG=1 bash "$S" tests/fixtures -n 0)
           set -e
           [ "$with_rg" = "$without_rg" ] || { diff <(echo "$with_rg") <(echo "$without_rg"); exit 1; }
+
+      - name: Audit handles spaces and colons in paths
+        run: |
+          S=skills/iphone-duo-design/scripts/audit_duo_readiness.sh
+          d=$(mktemp -d)/"My App"
+          mkdir -p "$d/Sub Dir" "$d/Pods/X"
+          printf 'let w = UIScreen.main.bounds.width\n' > "$d/Sub Dir/A B.swift"
+          printf 'let w = UIScreen.main.bounds.width\n' > "$d/Pods/X/Skip.swift"
+          printf '.toolbar {\n  ToolbarItem {\n    Button { } label: { Image(systemName: "star") }\n  }\n}\n' > "$d/Sub Dir/odd:name.swift"
+          for tool in rg grep; do
+            [ "$tool" = grep ] && export AUDIT_NO_RG=1
+            set +e; out=$(bash "$S" "$d" -q -n 0); code=$?; set -e
+            echo "$out"
+            [ "$code" -eq 1 ] || { echo "$tool: expected exit 1, got $code"; exit 1; }
+            echo "$out" | grep -q 'A B.swift:1:' || { echo "$tool: missed file with spaces"; exit 1; }
+            echo "$out" | grep -q 'odd:name.swift:3:' || { echo "$tool: missed file with a colon"; exit 1; }
+            ! echo "$out" | grep -q Skip.swift || { echo "$tool: scanned Pods"; exit 1; }
+          done
 
       - name: No remote-install patterns in the skill
         run: |

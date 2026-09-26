@@ -50,10 +50,10 @@
       "expectations": [
         "The spec is saved as a markdown file",
         "Covers outer display (closed), inner display portrait and landscape, and half-folded standing on the counter",
-        "States bars are on the side on the outer display and inner landscape, horizontal in inner portrait",
+        "States bars are on the side on the outer display and inner landscape (book pose), horizontal in inner portrait (including tabletop)",
         "Treats Cooking Mode as task-focused: when space runs out the tab bar minimizes and the toolbar is kept",
         "Gives a visibility priority order: Next/Previous/Start Timer stay visible longest and Share overflows first",
-        "In the tabletop pose, the step text and timer readout sit in the upper half and nothing important straddles the fold",
+        "In the tabletop pose (inner display in portrait, horizontal fold), the step text and timer readout sit in the upper half, the controls in the lower half, and nothing important straddles the fold",
         "Asks for small adjustments rather than rearranging, with consistent control positions across poses",
         "Every toolbar item has a title and a symbol",
         "Is written for a designer: behavior in plain words, API names (if any) confined to a short notes section, and under about 120 lines",
@@ -66,7 +66,8 @@
       "expected_output": "Runs the audit (clean), reviews the code, and reports it is already adapted. Makes no edits, or only clearly justified small ones, and lists what still needs checking on a simulator.",
       "files": [
         "tests/fixtures/Clean/CleanView.swift",
-        "tests/fixtures/Clean/Info.plist"
+        "tests/fixtures/Clean/Info.plist",
+        "tests/fixtures/Clean/AppDelegate.swift"
       ],
       "expectations": [
         "Ran the audit script and reported that it found nothing",
