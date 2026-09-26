@@ -25,7 +25,7 @@ while [ $# -gt 0 ]; do
         -q|--quiet)   QUIET=1 ;;
         -s|--summary) SUMMARY=1; QUIET=1 ;;
         -n|--max)
-            [ $# -ge 2 ] && [[ "$2" =~ ^[0-9]+$ ]] || { echo "Error: $1 needs a number" >&2; exit 2; }
+            if [ $# -lt 2 ] || ! [[ "$2" =~ ^[0-9]+$ ]]; then echo "Error: $1 needs a number" >&2; exit 2; fi
             MAX="$2"; shift ;;
         -h|--help)    sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         -*)           echo "Unknown option: $1" >&2; exit 2 ;;
@@ -62,7 +62,7 @@ CHECKS=(
     "Several controls in one ToolbarItem|\[stack inside ToolbarItem\]$|A custom view never moves to the side bar. Use ToolbarItemGroup with one item per control."
     "Side bars disabled|(toolbarVerticalBehavior\(\.disabled\)|preferredVerticalBarBehavior)|Only for immersive single-purpose UIs (Calculator, full-screen player). Keep the system's side placement otherwise."
     "Deprecated NavigationView|(^|[^A-Za-z])NavigationView[[:space:]]*\{|Use NavigationSplitView or NavigationStack."
-    "Odd fixed grid column counts|((repeating:[[:space:]]*(GridItem|\.init)[^,]*,|NSCollectionLayoutGroup.*)[[:space:]]*count:[[:space:]]*[3579]$N|\[[[:space:]]*($GRID[[:space:]]*,[[:space:]]*){2}($GRID[[:space:]]*,[[:space:]]*){0,2}$GRID[[:space:]]*,?[[:space:]]*\])|Use an even count or adaptive columns."
+    "Odd fixed grid column counts|((repeating:[[:space:]]*(GridItem|\.init)[^,]*,|NSCollectionLayoutGroup.*)[[:space:]]*count:[[:space:]]*[3579]$N|\[[[:space:]]*(${GRID}[[:space:]]*,[[:space:]]*){2}(${GRID}[[:space:]]*,[[:space:]]*){0,2}${GRID}[[:space:]]*,?[[:space:]]*\])|Use an even count or adaptive columns."
     "Orientation lock (games must fill every pose)|supportedInterfaceOrientations|Fill the screen in every pose; no bare letterboxing."
 )
 
@@ -109,6 +109,7 @@ search_swift() {
 toolbar_context() {
     { grep -E 'Spacer\(\)|[.]toolbar|ToolbarItem' "$SWIFT" || [ $? -eq 1 ]; } | cut -d: -f1 | uniq | tr '\n' '\0' > "$LIST"
     [ -s "$LIST" ] || return 0
+    # shellcheck disable=SC2016 # awk program, not shell
     xargs -0 awk '
         function depth_at(s, p,   pre) { pre = substr(s, 1, p - 1); return depth + gsub(/[{]/, "{", pre) - gsub(/[}]/, "}", pre) }
         FNR == 1 { depth = 0; n = 0 }
@@ -143,6 +144,7 @@ full_screen_opt_out() {
     # xargs exits 123 when some grep call found nothing; only higher codes are errors.
     xargs -0 grep -lF --null UIRequiresFullScreen < "$FILES" > "$LIST" || { rc=$?; [ "$rc" -eq 1 ] || [ "$rc" -eq 123 ] || return 2; }
     [ -s "$LIST" ] || return 0
+    # shellcheck disable=SC2016 # awk program, not shell
     xargs -0 awk '
         FNR == 1 { key = 0 }
         /INFOPLIST_KEY_UIRequiresFullScreen[ \t]*=[ \t]*YES/ { print FILENAME ":" FNR ": " $0 "  [UIRequiresFullScreen]"; next }
