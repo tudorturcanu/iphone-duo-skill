@@ -1,7 +1,8 @@
 name: HIG drift
 
-# Apple's "Designing for iPhone Duo" article is new and will change. This fails when it does,
-# so references/ and SKILL.md get re-checked. Only a hash is stored, never Apple's text.
+# Apple's "Designing for iPhone Duo" article and the iOS 27.1 beta APIs are new and will change. These jobs fail
+# when they do, so references/ and SKILL.md get re-checked. Only a hash and availability metadata are stored,
+# never Apple's text.
 
 on:
   schedule:
@@ -28,3 +29,10 @@ jobs:
             exit 1
           fi
           echo "HIG article unchanged ($now)"
+
+  apis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every Apple API the skill names still exists with the same availability
+        run: python3 tests/check_apple_apis.py
