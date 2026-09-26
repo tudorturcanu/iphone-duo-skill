@@ -5,19 +5,86 @@
       "id": 1,
       "prompt": "we're getting our notes app ready for the new iPhone Duo. the SwiftUI code is in NotesApp/ — can you go through it, fix whatever's going to break or look wrong on the Duo, and give me a short summary of what you changed and why",
       "expected_output": "Fixed Swift files that compile, plus a summary. Replaces custom tab bar with TabView, removes UIScreen.main.bounds widths, uses even/adaptive grid columns, replaces custom ellipsis Menu and fixed spacers with ToolbarItemGroups and system overflow, gives toolbar items Label title+symbol, stops ignoring safe areas / hard-coded Dynamic Island padding, and does not invent iPhone Duo API names.",
-      "files": ["tests/fixtures/NotesApp/NotesRootView.swift", "tests/fixtures/NotesApp/NotesListView.swift"]
+      "files": [
+        "tests/fixtures/NotesApp/NotesRootView.swift",
+        "tests/fixtures/NotesApp/NotesListView.swift"
+      ],
+      "expectations": [
+        "Ran the audit script (or explicitly read the files) before editing",
+        "No UIScreen.main remains in NotesApp/",
+        "The homemade HStack tab bar is replaced by TabView with Tab/tabItem entries that have titles and symbols",
+        "The grid column count is even or adaptive (no count: 3)",
+        "The custom ellipsis Menu is gone; its actions are in ToolbarOverflowMenu or another system-overflow mechanism",
+        "No Spacer().frame(width:) or HStack of buttons inside a single ToolbarItem remains; items use ToolbarItemGroup",
+        "Every toolbar button uses Label (or Button(_:systemImage:)) with both a title and a symbol",
+        "No .ignoresSafeArea() on scrolling or interactive content and no hard-coded .padding(.top, 59)",
+        "Any Duo-specific API used is one of the names in SKILL.md or the reference (e.g. visibilityPriority, reservedRegions); nothing invented",
+        "The summary lists what was changed and says what could not be verified (e.g. no iPhone Duo simulator)"
+      ]
     },
     {
       "id": 2,
       "prompt": "Our photo library screen (UIKit, GalleryViewController.swift) looks broken on iPhone Duo when the device is open or half folded, and the toolbar is in the wrong place compared to Apple's apps. Please refactor it so it adapts properly and explain the changes.",
       "expected_output": "Refactored GalleryViewController.swift that compiles, plus explanation. Removes hard-coded frames and UIScreen/idiom-based column logic, uses Auto Layout/safe area or compositional layout with column count from available width (even count), replaces custom bottom UIView toolbar with system toolbar/nav items, replaces fixedSpace with UIBarButtonItemGroup, moves custom ellipsis menu into additionalOverflowItems, gives items title + image, and doesn't invent Duo APIs.",
-      "files": ["tests/fixtures/GalleryApp/GalleryViewController.swift"]
+      "files": [
+        "tests/fixtures/GalleryApp/GalleryViewController.swift"
+      ],
+      "expectations": [
+        "No hard-coded CGRect(x: 0, y: 0, width: 390, height: 844) or UIScreen.main.bounds remains",
+        "Column count no longer depends on userInterfaceIdiom; it derives from available width and is even (or adaptive)",
+        "The custom bottom UIView and UIToolbar are removed; actions live in navigationItem / toolbarItems of a navigation controller",
+        "No .fixedSpace items remain; items are grouped with UIBarButtonItemGroup",
+        "The ellipsis button is removed; extra actions go through navigationItem.additionalOverflowItems",
+        "Every UIBarButtonItem has both a title and an image",
+        "Layout uses Auto Layout / safe area (no bottom constant of -70 compensating for the custom bar)",
+        "Any Duo-specific API used is one of the names in SKILL.md or the reference; nothing invented",
+        "The explanation says what was verified and what was not"
+      ]
     },
     {
       "id": 3,
       "prompt": "I'm a designer working on a recipe app. Main nav is a tab bar with 5 tabs (Discover, Search, Saved, Grocery List, Profile). The key screen is Cooking Mode: step-by-step instructions, a big timer, and toolbar buttons for Previous Step, Next Step, Start Timer, Ingredients, and Share. Write me a short spec for how Cooking Mode should behave on iPhone Duo — closed, fully open, and half-folded standing on the kitchen counter. Save it as a markdown file.",
       "expected_output": "A markdown spec covering outer display, inner display portrait/landscape, and half-folded poses. Controls on the side on outer/landscape, task-oriented view so tab bar minimizes and toolbar is kept, toolbar ordering and overflow priority (Next/Previous/Timer keep visibility, Share overflows), timer and steps split across the fold rather than straddling it, small adjustments not rearrangement, consistent control positions, title+symbol on items, no invented API names.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "The spec is saved as a markdown file",
+        "Covers outer display (closed), inner display portrait and landscape, and half-folded / tabletop",
+        "States bars are on the side on the outer display and inner landscape, horizontal in inner portrait",
+        "Treats Cooking Mode as task-focused: tab bar minimizes, toolbar kept (may cite toolbarVerticalCompressionBehavior(.prefersToolbarItems))",
+        "Gives a visibility priority order: Next/Previous/Start Timer stay visible longest and Share overflows first",
+        "In the half-folded tabletop pose, content (step text) sits in the top half and controls/timer in the bottom half, not across the fold",
+        "Asks for small adjustments rather than rearranging, with consistent control positions across poses",
+        "Every toolbar item has a title and a symbol",
+        "Does not invent API names; any API mentioned exists in SKILL.md or the reference"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "can you check whether tests/fixtures/Clean/ is ready for iPhone Duo? fix anything that needs fixing",
+      "expected_output": "Runs the audit (clean), reviews the code, and reports it is already adapted. Makes no edits, or only clearly justified small ones, and lists what still needs checking on a simulator.",
+      "files": [
+        "tests/fixtures/Clean/CleanView.swift",
+        "tests/fixtures/Clean/Info.plist"
+      ],
+      "expectations": [
+        "Ran the audit script and reported that it found nothing",
+        "Did not rewrite working code: CleanView.swift is unchanged or changes are small and each is justified",
+        "Did not add Duo-specific code the file doesn't need (no hinge handling, no per-pose branches)",
+        "Lists the checklist items that still need a simulator or device"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "I have a custom drawing canvas (a UIView subclass, CanvasView) with floating tool palettes pinned to the center of the screen. On iPhone Duo half folded the palettes land right in the crease. How do I detect the fold and move them? Also is there an API to know if the phone is half open? Show UIKit code.",
+      "expected_output": "Uses UIView.reservedRegions(kind: .division) to find the fold and lay out palettes clear of each region's frame, re-running in layoutSubviews; notes .occlusion for cameras and .includeInactive; mentions UIHingeInteraction for hinge status but says layout should come from reserved regions; notes iOS 27.1 availability. No invented APIs.",
+      "files": [],
+      "expectations": [
+        "Uses UIView.reservedRegions(kind: .division) (exact name) to get the fold's frame",
+        "Moves the palettes in layoutSubviews / viewDidLayoutSubviews (or equivalent) so they update when the pose changes",
+        "Mentions UIHingeInteraction (or UIHinge.Status .partiallyOpen) for fold state, but recommends reserved regions for layout",
+        "Wraps new APIs in if #available(iOS 27.1, *) or states the iOS 27.1 requirement",
+        "Uses no API names outside SKILL.md and the reference (no invented FoldObserver, hingeState, etc.)"
+      ]
     }
   ]
 }

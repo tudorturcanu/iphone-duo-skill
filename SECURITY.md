@@ -5,9 +5,11 @@
 `iphone-duo-design` is a set of Markdown instructions for AI coding agents, plus one helper script.
 
 - **No installer, no network.** The skill downloads nothing, installs nothing, and makes no network calls.
-- **Read-only script.** `skills/iphone-duo-design/scripts/audit_duo_readiness.sh` runs `grep` / `rg` over `*.swift` files in the directory you pass it and prints matches. It never modifies your files; its only writes are temporary files it deletes on exit.
+- **Read-only script.** `skills/iphone-duo-design/scripts/audit_duo_readiness.sh` runs `grep` / `rg` over `*.swift` files in the directory you pass it and prints matches. It never modifies your files; its only writes are temporary files it deletes on exit. It exits `2` if the folder holds no Swift files or Xcode project.
 - **Scoped edits.** The instructions tell the agent to change only the app code the user asked about.
-- **Declared tools.** `SKILL.md` lists `allowed-tools: Read, Grep, Glob` in its frontmatter.
+- **Declared tools.** `SKILL.md`'s `allowed-tools` pre-approves `Read`, `Grep`, `Glob`, the read-only audit script,
+  and `xcrun simctl list devicetypes`. In Claude Code this skips permission prompts for those calls only; edits to
+  your code and any other command still ask. Other agents may ignore the field.
 
 Only `skills/iphone-duo-design/` is installed. `tests/` and `.github/` stay in this repository.
 

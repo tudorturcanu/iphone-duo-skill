@@ -1,20 +1,35 @@
 # Designing for iPhone Duo — condensed reference
 
 This is an original summary of Apple's Human Interface Guidelines article
-*Designing for iPhone Duo* (first published September 9, 2026), written for AI coding
-agents. It preserves the guidance and the developer-doc links but not Apple's text or
-images. Read the source for exact wording and diagrams:
+*Designing for iPhone Duo* (first published September 9, 2026), the developer article
+*Preparing your app for iPhone Duo*, and Apple's iPhone Duo tech talks, written for AI
+coding agents. It preserves the guidance and the developer-doc links but not Apple's
+text or images. Read the sources for exact wording and diagrams:
 
 - HIG article: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
   (Markdown version: https://developer.apple.com/tutorials/data/design/human-interface-guidelines/designing-for-iphone-duo.md).
-  Last checked against the source on 2026-09-13; the article's change log then had one entry (September 9, 2026).
+  Last checked against the source on 2026-09-26. Apple revised the article after 2026-09-13 without adding a
+  change-log entry (it now names the reserved-region, arrangement-view, and compression APIs).
+- Developer article: https://developer.apple.com/documentation/technologyoverviews/preparing-your-app-for-iphone-duo
 - Related: [Designing for iOS](https://developer.apple.com/design/human-interface-guidelines/designing-for-ios),
   [Layout](https://developer.apple.com/design/human-interface-guidelines/layout),
   [Split views](https://developer.apple.com/design/human-interface-guidelines/split-views),
   [Toolbars](https://developer.apple.com/design/human-interface-guidelines/toolbars),
   [Designing for games](https://developer.apple.com/design/human-interface-guidelines/designing-for-games),
   [Apple Design Resources](https://developer.apple.com/design/resources/#ios-apps)
-- Tech Talks: `videos/play/tech-talks/111462`, `111463`, and `111466`
+- Tech Talks (`developer.apple.com/videos/play/tech-talks/<id>`): 111461 *Prepare your app*, 111462 *Raise the bar*,
+  111463 *Strike a pose* (adaptive layouts), 111464 *Multiple displays and scenes*, 111465 *Camera*, 111466 *Design for iPhone Duo*.
+- Testing: [Device Hub](https://developer.apple.com/documentation/xcode/device-hub) in Xcode previews poses.
+  The iPhone Duo SDK and simulator ship in Xcode 27.1 beta.
+
+## Contents
+
+1. [What the device is](#1-what-the-device-is)
+2. [Best practices](#2-best-practices-the-headline-rules)
+3. [Dynamic layouts](#3-dynamic-layouts): reserved regions, folding, split and arrangement views
+4. [Vertical controls](#4-vertical-controls)
+5. [Beyond the HIG](#5-beyond-the-hig-developer-article-and-tech-talks): SDK, screens, bars, displacement
+6. [API reference](#6-api-reference): exact names and signatures
 
 ## 1. What the device is
 
@@ -69,8 +84,10 @@ controls). Three of them:
 
 - Alerts, context menus, and sheets move around the fold on their own. Split views
   rebalance column widths and margins to match the inner display's symmetry.
-- Custom components use the **reserved region APIs** to move content away from these
-  regions. (The HIG does not name the exact symbols. Verify in the SDK.)
+- Custom components use the reserved-region APIs to keep important elements clear:
+  SwiftUI `ReservedRegion` (from `GeometryProxy.reservedRegions(kind:options:layoutDirectionBehavior:)`),
+  UIKit `UIView.ReservedRegion` (from `UIView.reservedRegions(kind:options:)`). Kinds: `.division` (the fold)
+  and `.occlusion` (a camera, including the Dynamic Island). See §6.
 
 ### Adapting when the device folds
 
@@ -96,15 +113,18 @@ size, orientation, and reserved regions. Two kinds:
 - **Split arrangement.** Divides its area between the two views. Horizontal split when
   wider than tall, vertical split when taller than wide. You can restrict which axes it
   may use.
-- **Overlay arrangement.** Stacks primary over secondary. When partially folded, the
-  views move to opposite sides of the fold. The secondary view can be collapsed.
+- **Overlay arrangement.** Places the primary view atop the secondary. When partially
+  folded, the views move to opposite sides of the fold (primary to the trailing or bottom
+  side, secondary to the leading or top side). The secondary view can be collapsed.
 
 Guidance:
 - Use one when your layout already looks like one: `HStack` / `VStack` → split
   arrangement; `ZStack` → overlay arrangement.
-- Arrangement views don't navigate. Wrap them in `NavigationSplitView` / `TabView`
-  (or UIKit equivalents); never nest navigation inside them.
-- The HIG does not name the arrangement-view API types. Verify in the SDK.
+- Split fits main/detail; overlay fits foreground/background (a player over its queue).
+- Arrangement views don't navigate. Put a `NavigationStack` / `TabView` (or a
+  `UINavigationController`) around them. Don't place one inside a `NavigationSplitView`,
+  `List`, or `ScrollView`, where part of it could become unreachable.
+- Developer docs: SwiftUI `ArrangementView`, UIKit `UIArrangementViewController`. See §6.
 
 ## 4. Vertical controls
 
@@ -138,7 +158,8 @@ Rules:
   Developer docs: SwiftUI `ToolbarItemVisibilityPriority`, UIKit `UIBarButtonItemVisibilityPriority`.
   Set it with SwiftUI `.visibilityPriority(_:)` on any `ToolbarContent`, including a `ToolbarItemGroup`
   (`.automatic`, `.low`, `.high`, or `init(higherThan:)`/`init(lowerThan:)`), or UIKit
-  `UIBarButtonItem.visibilityPriority` (`.high`, `.standard`, `.low`, or a raw `Int`).
+  `UIBarButtonItem.visibilityPriority` (`.high`, `.standard`, `.low`, `init(higherThan:)`/`init(lowerThan:)`,
+  or `init(rawValue:)`).
 - **Don't override default bar placement.** Side placement is a core iPhone Duo pattern.
 - **Full-width layouts** are fine for immersive, non-scrolling interfaces if nothing
   collides with the Dynamic Island or status bar. Calculator goes from 4 columns × 5
@@ -156,27 +177,113 @@ Rules:
   - Navigation-focused view → toolbar items go to the overflow menu, tab bar stays.
     This is the default compression behavior.
   - Task-oriented view → minimize the tab bar, keep the toolbar (mirrors the minimized
-    tab bar on other iPhones).
+    tab bar on other iPhones). Developer docs: SwiftUI `ToolbarVerticalCompressionBehavior`
+    (`.toolbarVerticalCompressionBehavior(.prefersToolbarItems)`), UIKit `UIVerticalBarCompressionBehavior`
+    (`navigationItem.verticalBarCompressionBehavior = .prefersBarItems`).
 - **Use the system overflow menu.** Move any custom overflow actions into it. Reserve
   the ellipsis symbol for overflow; give other menus a distinct symbol.
   Developer docs: SwiftUI `ToolbarOverflowMenu`, UIKit `UINavigationItem.additionalOverflowItems`.
 
-## 5. API names
+## 5. Beyond the HIG: developer article and tech talks
 
-Confirmed by the HIG: `NavigationSplitView`, `UISplitViewController`, `ToolbarItemGroup`,
-`UIBarButtonItemGroup`, `ToolbarItemVisibilityPriority`, `UIBarButtonItemVisibilityPriority`,
-`ToolbarOverflowMenu`, `UINavigationItem.additionalOverflowItems`, `Label`,
-`UIBarButtonItem`, `GeometryProxy.safeAreaInsets`, `UIView.safeAreaInsets`.
+**Build and screens**
+- Build with the latest Xcode (iOS 27.1 SDK). Older builds don't extend under the status bar and camera, and
+  don't get side bars.
+- `UIScreen.main` is ambiguous on a two-display device and will be deprecated. Use the view or scene bounds,
+  `window?.windowScene?.screen`, and `traitCollection.displayScale`.
+- `UIRequiresFullScreen` is still honored, but the app resizes anyway when the device opens or closes.
+- The inner display doesn't honor supported interface orientations; locked apps are scaled. Don't branch
+  layout on `userInterfaceIdiom` or interface orientation. Use size classes with automatic trait tracking.
+- Safe-area insets differ per side. Use `bounds.inset(by: safeAreaInsets)`, not `width - insets.left * 2`.
+- Corners: `ConcentricRectangle` (SwiftUI) and `UICornerConfiguration` (UIKit) follow the new screen shapes.
 
-Confirmed in the developer docs (checked 2026-09-13):
-- SwiftUI `ToolbarContent.visibilityPriority(_:)`, e.g. `ToolbarItem { … }.visibilityPriority(.high)`.
-- UIKit `UIBarButtonItem.visibilityPriority`. No group-level property is documented on `UIBarButtonItemGroup`;
-  set it on each item.
-- SwiftUI `ToolbarOverflowMenu { … }` inside `.toolbar`. UIKit `additionalOverflowItems` is a
-  `UIDeferredMenuElement?`; setting it shows the overflow button, and the system adds items that don't fit.
+**Bars**
+- Only bars owned by a container go vertical: SwiftUI `.toolbar` on content inside `NavigationStack`,
+  `NavigationSplitView`, or `TabView`; UIKit items on a view controller inside a `UINavigationController` /
+  `UITabBarController`. Content of a custom `UIToolbar`, `UINavigationBar`, or `UITabBar` is ignored.
+- Split views: only the detail column's bars go vertical; sidebar and content columns stay horizontal.
+  Inspectors stay horizontal. Sheets on the outer display go vertical by default. On the inner display, only
+  trailing sheets do (`presentationPlacement(_:)` / `UISheetPresentationController.preferredPlacement`).
+- Top of the side bar: custom Back/Close as `ToolbarItem(placement: .cancellationAction)` or UIKit
+  `leadingItemGroups` with `leftItemsSupplementBackButton = false`; prominent actions (Done) as
+  `.topBarPinnedTrailing` or `UINavigationItem.pinnedTrailingGroup`.
+- The side bar uses the icon; horizontal bars prefer the icon; overflow uses icon and title. Title-only
+  items and custom views stay horizontal unless opted in with `axisBehavior(.verticalPreferred)`. Use
+  `.horizontalOnly` for items whose text carries meaning (a cart total, a Select/Done toggle).
+- Flexible spacers are zero-size vertically; fixed spacers keep their size. Don't add spacing.
+- Show counts with `.badge(_:)` / `UIBarButtonItem.badge = .count(n)`.
+- Under Reduce Transparency the side bar gets a background; keep custom content legible.
+- Disable side bars (`.toolbarVerticalBehavior(.disabled)` / override `preferredVerticalBarBehavior` to return
+  `.disabled`) only for immersive single-purpose UIs such as a calculator, a full-screen player, or a sheet with a
+  single button. Treat it as a fixed choice, not something that toggles with view state.
+- Custom views that must adapt to the side bar read `@Environment(\.toolbarVerticalEdge)` (`HorizontalEdge?`) or
+  `traitCollection.verticalBarEdge` (`.leading`, `.trailing`, `.unspecified`).
+- Hero or background images extend under the side bar with `backgroundExtensionEffect()` / `UIBackgroundExtensionView`.
+- Information-dense apps can show the tab bar as a sidebar on the inner display:
+  `.defaultTabBarPlacement(.sidebar)` / `tabBarController.sidebar.preferredPlacement = .sidebar`.
 
-**Not confirmed** (look up in the SDK, never guess):
-- Reserved-region APIs. The HIG compares them to iPad window controls. The documented API for those is UIKit
-  `UIView.LayoutRegion` (`layoutGuide(for:)`, `edgeInsets(for:)`, `.safeArea(cornerAdaptation:)`,
-  `.margins(cornerAdaptation:)`), but its docs don't yet mention the fold or cameras.
-- Arrangement-view types and any pose or fold-state query API. No public docs found.
+**Displacement and poses**
+- When the fold would cover something, move the smallest meaningful scope and move related elements together.
+- Continuous scrolling content (feeds, articles, lists) doesn't need to avoid the fold.
+- Grids: widen the spacing at the fold and keep the outer margins. Query inactive divisions
+  (`options: .includeInactive`) to choose an even column count whenever a fold exists.
+- Book pose: displaced alerts go to the trailing side. Tabletop pose: the top half suits content viewed from a
+  distance, the bottom half suits controls. A tabletop layout is optional and keeps the same controls.
+- Audit centered layouts: they're what the fold cuts through.
+- Hinge state (`onHingeChange` / `UIHingeInteraction`) is for interactions, such as using the hinge angle as an input.
+  Don't drive layout from it.
+
+**Camera and other scenes** (outside this skill's layout focus): see *Choosing a camera by the direction it
+faces* (AVKit) and *Registering a camera capture accessory on iPhone Duo* (AVFoundation), and tech talks 111464–111465.
+
+## 6. API reference
+
+Checked against Apple's developer docs on 2026-09-26. **iOS 27.1, beta** unless noted. Guard with
+`if #available(iOS 27.1, *)` when the deployment target is lower.
+
+**Reserved regions**
+- SwiftUI: `GeometryProxy.reservedRegions(kind: ReservedRegion.Kind, options: ReservedRegion.QueryOptions = [],
+  layoutDirectionBehavior: LayoutDirectionBehavior = .mirrors) -> [ReservedRegion]`, called inside a `GeometryReader`.
+- UIKit: `UIView.reservedRegions(kind: UIView.ReservedRegion.Kind, options: UIView.ReservedRegion.QueryOptions = [])
+  -> [UIView.ReservedRegion]`.
+- Region properties: `frame` (includes margins), `margins`, `isActive`, `kind`, `id`. Kinds: `.division`,
+  `.occlusion`. Options: `.includeInactive` (active regions only by default). The fold is active only while
+  partially folded.
+
+**Arrangement views**
+- SwiftUI: `ArrangementView<Primary, Secondary>`, written `ArrangementView { Primary() } secondary: { Secondary() }`.
+  Style with `.arrangementViewStyle(_:)`: `.automatic` (resolves to split), `.split`, `.overlay`; limit axes with
+  `.split.axes(.horizontal)` / `.overlay.axes(_:)`. Custom styles conform to `ArrangementViewStyle`.
+- Split sizing: `.splitArrangementLayoutRatio(_:)`, `.splitArrangementLayoutSize(minWidth:…)`,
+  `.splitArrangementFixedLayoutSize(horizontal:vertical:)`. Overlay: `.overlayArrangementEdge(_:)` picks the
+  horizontal edge a view takes when side by side.
+- Environment: `\.overlayArrangementZIndex` (`Int`; greater than 0 means the view is overlaid, e.g. collapse a
+  queue), `\.splitArrangementAxis`.
+- UIKit: `UIArrangementViewController()`; `setViewController(_:for: .primary / .secondary, animated:)`;
+  `updateArrangement(_:animated:)` with `UISplitArrangement` (default) or `UIOverlayArrangement`, e.g.
+  `.split.axes(.horizontal)`; `state(for:)` returns a `ViewState?` with `isHidden`, `splitAxis`, `zIndex`.
+
+**Hinge**
+- SwiftUI: `.onHingeChange(isEnabled:_:)` with `(DeviceHingeContext, DeviceHingeContext)`; `context.hinge` is a
+  `DeviceHinge?` (nil without a hinge) with `angle` and `status` (`.closed`, `.partiallyOpen`, `.fullyOpen`).
+- UIKit: `UIHingeInteraction(updateHandler:)` added with `addInteraction(_:)`; `update.hinge` is a `UIHinge?` with
+  `angle` (radians) and `status` (adds `.unknown`).
+
+**Bars**
+| Purpose | SwiftUI | UIKit |
+|---|---|---|
+| Overflow order | `ToolbarContent.visibilityPriority(_:)` (27.0) | `UIBarButtonItem.visibilityPriority` (27.0) |
+| Explicit overflow items | `ToolbarOverflowMenu { … }` (27.0) | `UINavigationItem.additionalOverflowItems` (16.0) |
+| Vertical eligibility | `ToolbarContent.axisBehavior(_:)`: `.automatic`, `.horizontalOnly`, `.verticalPreferred` | `UIBarButtonItem.axisBehavior` (same cases) |
+| Tab bar vs items | `.toolbarVerticalCompressionBehavior(_:)`: `.automatic`, `.prefersTabBar`, `.prefersToolbarItems` | `UINavigationItem.verticalBarCompressionBehavior`: `.automatic`, `.prefersTabBar`, `.prefersBarItems` |
+| Opt out of side bars | `.toolbarVerticalBehavior(_:)`: `.automatic`, `.disabled` | `UIViewController.preferredVerticalBarBehavior` (override) |
+| Which edge | `EnvironmentValues.toolbarVerticalEdge` | `UITraitCollection.verticalBarEdge` |
+| Pinned prominent action | `ToolbarItemPlacement.topBarPinnedTrailing` (27.0) | `UINavigationItem.pinnedTrailingGroup` (16.0) |
+| Sheet placement | `.presentationPlacement(_:)` (27.0) | `UISheetPresentationController.preferredPlacement` (27.0) |
+
+No group-level visibility priority is documented on `UIBarButtonItemGroup`; set it on each item.
+`additionalOverflowItems` is a `UIDeferredMenuElement?`; setting it shows the overflow button.
+
+Also confirmed by the HIG: `NavigationSplitView`, `UISplitViewController`, `ToolbarItemGroup`,
+`UIBarButtonItemGroup`, `Label`, `UIBarButtonItem`, `GeometryProxy.safeAreaInsets`, `UIView.safeAreaInsets`.
+Anything else Duo-specific: look it up in the SDK and never guess.

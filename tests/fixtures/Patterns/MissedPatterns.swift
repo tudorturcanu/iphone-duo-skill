@@ -48,3 +48,48 @@ final class PatternsViewController: UIViewController {
     func layoutStacked() {}
     func layoutTall() {}
 }
+
+struct ToolbarPatternsView: View {
+    @State private var selectedTab = 0
+
+    var body: some View {
+        NavigationStack {
+            Text("Body")
+                .ignoresSafeArea(.container, edges: .all) // duo-bad
+                .toolbarVerticalBehavior(.disabled) // duo-bad
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        HStack { // duo-bad
+                            Button { } label: { Image(systemName: "star") } // duo-bad
+                            Button { } label: { Label("Share", systemImage: "square.and.arrow.up") }
+                        }
+                    }
+                }
+            HStack {
+                Button(action: { selectedTab = 0 }) { Text("Home") } // duo-bad
+            }
+        }
+    }
+}
+
+struct BottomTabBar: View { // duo-bad
+    var body: some View { Text("Tabs") }
+}
+
+final class LegacyBarsViewController: UIViewController {
+    let bar = UIToolbar() // duo-bad
+    let tabs = UITabBar(frame: .zero) // duo-bad
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let width = view.bounds.width - view.safeAreaInsets.left * 2 // duo-bad
+        let scale = UIScreen.main.scale // duo-bad
+        let share = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), menu: nil) // duo-bad
+        navigationItem.rightBarButtonItem = share
+        _ = (width, scale)
+    }
+
+    override var preferredVerticalBarBehavior: UIVerticalBarBehavior { .disabled } // duo-bad
+}
+
+final class FancyToolbar: UIToolbar {} // duo-bad

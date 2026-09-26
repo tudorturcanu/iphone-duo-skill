@@ -1,0 +1,82 @@
+[
+  {
+    "query": "we're getting our notes app ready for the new iPhone Duo, can you look at NotesApp/ and fix what'll break",
+    "should_trigger": true
+  },
+  {
+    "query": "the toolbar shows up on the side of the screen on the Duo's outer display, how should I order my bar items?",
+    "should_trigger": true
+  },
+  {
+    "query": "audit ios/MyApp for foldable iPhone readiness and give me a list of issues",
+    "should_trigger": true
+  },
+  {
+    "query": "how do I keep my custom SwiftUI canvas controls out of the hinge when the iPhone is half folded?",
+    "should_trigger": true
+  },
+  {
+    "query": "what's an ArrangementView and should my player screen use split or overlay?",
+    "should_trigger": true
+  },
+  {
+    "query": "write a design spec for how our recipe app's cooking mode behaves on iPhone Duo in tabletop pose",
+    "should_trigger": true
+  },
+  {
+    "query": "my UIKit app looks letterboxed on the inner display of the dual-screen iPhone, why?",
+    "should_trigger": true
+  },
+  {
+    "query": "our tab bar disappears on the Duo when there are lots of toolbar items, how do I keep the toolbar instead?",
+    "should_trigger": true
+  },
+  {
+    "query": "review GalleryViewController.swift for iPhone Duo \u2014 the grid straddles the fold",
+    "should_trigger": true
+  },
+  {
+    "query": "is UIRequiresFullScreen still ok now that the folding iPhone is out?",
+    "should_trigger": true
+  },
+  {
+    "query": "adapt my Android app for Galaxy Z Fold using Jetpack WindowManager fold features",
+    "should_trigger": false
+  },
+  {
+    "query": "how did Microsoft Surface Duo handle dual-screen layouts in Xamarin?",
+    "should_trigger": false
+  },
+  {
+    "query": "my iPad app breaks in Stage Manager when the window gets narrow, help me fix the layout",
+    "should_trigger": false
+  },
+  {
+    "query": "NavigationSplitView sidebar column is too wide on iPad, how do I set its width?",
+    "should_trigger": false
+  },
+  {
+    "query": "add a Live Activity to my food delivery app that shows in the Dynamic Island on iPhone 17 Pro",
+    "should_trigger": false
+  },
+  {
+    "query": "convert this SwiftUI list to use LazyVGrid with 3 columns on iPhone",
+    "should_trigger": false
+  },
+  {
+    "query": "how do I support landscape on iPhone 16 in my UIKit game?",
+    "should_trigger": false
+  },
+  {
+    "query": "write unit tests for my Swift networking layer",
+    "should_trigger": false
+  },
+  {
+    "query": "what's new in SwiftUI toolbars in iOS 26 Liquid Glass?",
+    "should_trigger": false
+  },
+  {
+    "query": "my React Native app needs to support foldable Android phones and tablets",
+    "should_trigger": false
+  }
+]

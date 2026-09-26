@@ -2,6 +2,46 @@
 
 All notable changes to this skill are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.1.0] - 2026-09-26
+
+Apple revised the HIG article after 1.0.0 (without a change-log entry) and published the iPhone Duo APIs
+in the iOS 27.1 beta docs. The skill now uses them instead of telling agents to leave TODOs.
+
+### Added
+- Documented APIs (iOS 27.1 beta, checked against Apple's docs): reserved regions (`reservedRegions(kind:options:)`,
+  `.division` / `.occlusion`), arrangement views (`ArrangementView`, `UIArrangementViewController`), hinge state
+  (`onHingeChange`, `UIHingeInteraction`), and bar APIs (`axisBehavior`, `toolbarVerticalCompressionBehavior` /
+  `verticalBarCompressionBehavior`, `toolbarVerticalBehavior` / `preferredVerticalBarBehavior`, `toolbarVerticalEdge` /
+  `verticalBarEdge`, `.topBarPinnedTrailing` / `pinnedTrailingGroup`).
+- Guidance from *Preparing your app for iPhone Duo* and tech talks 111461–111466: only container-managed bars go
+  vertical, where bars stay horizontal (split-view sidebars, inspectors, some sheets), displacement rules for the
+  fold, tabletop layouts, grid spacing at the fold, per-side safe-area insets, `UIScreen.main` deprecation.
+- `references/`: table of contents, a "Beyond the HIG" section, and an API reference with signatures and availability.
+- Audit detections: custom `UIToolbar` / `UITabBar` / `UINavigationBar` and homemade tab bars, symbol-only SwiftUI
+  toolbar buttons, several controls stacked in one `ToolbarItem`, `UIBarButtonItem(image:)` without a title,
+  `.ignoresSafeArea(.container, edges: .all)`, symmetric safe-area math (`insets.left * 2`), any `UIScreen.main`
+  use, and disabled side bars. The audit now misses none of the NotesApp eval's anti-patterns (it missed 3 of 9).
+- `expectations` for every eval, two new evals (no over-editing on clean code; exact fold API names), and
+  `tests/evals/trigger_evals.json` with 10 should-trigger and 10 near-miss queries.
+- CI: frontmatter validation (name, description length, `allowed-tools` syntax, `metadata.version` matches this
+  changelog, links resolve) and eval well-formedness.
+- `compatibility` and `metadata` (`version`, `author`) frontmatter.
+
+### Changed
+- Description rewritten in the third person with the terms users type and exclusions for near misses
+  (Android foldables, Galaxy Z Fold, Surface Duo, iPad multitasking).
+- Script paths are given relative to the skill folder (`${CLAUDE_SKILL_DIR}` in Claude Code), so they resolve
+  from the user's project.
+- `allowed-tools` uses the documented space-separated syntax and pre-approves only the read-only audit script and
+  `xcrun simctl list devicetypes`. It pre-approves; it never restricted edits.
+- Verification needs Xcode 27.1 beta; poses are changed from Device Hub.
+- The audit exits `2` when the path holds no Swift files or Xcode project, instead of reporting a clean app.
+
+### Fixed
+- `UIRequiresFullScreen` doesn't block resizing: the app still resizes when the device opens or closes.
+- Overlay arrangements place the primary view atop the secondary, not the reverse.
+- `tests/hig-duo.sha256` updated to the revised article.
+
 ## [1.0.0] - 2026-09-13
 
 ### Added

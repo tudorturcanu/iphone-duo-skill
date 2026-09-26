@@ -3,6 +3,7 @@ import SwiftUI
 import UIKit
 
 struct CleanView: View {
+    @State private var selectedTab = 0
     let columns = [GridItem(.adaptive(minimum: 160))]
     let fourColumns = Array(repeating: GridItem(.flexible()), count: 4)
     let evenColumns = [GridItem(.flexible()), GridItem(.flexible())]
@@ -26,8 +27,18 @@ struct CleanView: View {
                 }
                 ToolbarItemGroup(placement: .primaryAction) {
                     Button { } label: { Label("Compose", systemImage: "square.and.pencil") }
+                    Button("Share", systemImage: "square.and.arrow.up") { }
+                }
+                ToolbarItem(placement: .topBarPinnedTrailing) {
+                    Button("Done") { }
+                }
+                ToolbarOverflowMenu {
+                    Button("Print", systemImage: "printer") { }
                 }
             }
+            .toolbarVerticalCompressionBehavior(.prefersToolbarItems)
+            .background(Color.red.ignoresSafeArea(.container, edges: .top))
+            .onChange(of: selectedTab) { selectedTab == 1 ? print("one") : print("other") }
         }
     }
 }
@@ -41,5 +52,15 @@ final class CleanViewController: UIViewController {
         let compose = UIBarButtonItem(title: "Compose", image: UIImage(systemName: "square.and.pencil"), primaryAction: nil, menu: nil)
         navigationItem.trailingItemGroups = [UIBarButtonItemGroup(barButtonItems: [compose], representativeItem: nil)]
         if traitCollection.horizontalSizeClass == .regular { banner.isHidden = false }
+        let scale = traitCollection.displayScale
+        let screen = view.window?.windowScene?.screen
+        let content = view.bounds.inset(by: view.safeAreaInsets).width
+        let tabs = UITabBarController()
+        let toolbarItems = [compose]
+        _ = (scale, screen, content, tabs, toolbarItems)
     }
+}
+
+struct TabBarLabel: View {
+    var body: some View { Label("Inbox", systemImage: "tray") }
 }

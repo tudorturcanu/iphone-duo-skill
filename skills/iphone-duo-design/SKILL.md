@@ -1,8 +1,12 @@
 ---
 name: iphone-duo-design
-description: Adapt, build, and review SwiftUI/UIKit apps for iPhone Duo, Apple's dual-display hinged iPhone. Use for foldable or dual-screen iPhone work, device poses, the fold or hinge, reserved regions, arrangement views, side/vertical toolbars and tab bars, or iPhone Duo readiness audits.
+description: Adapts, builds, and reviews SwiftUI and UIKit apps for iPhone Duo, Apple's dual-display hinged iPhone. Use whenever the user mentions iPhone Duo, a foldable or dual-screen iPhone, the hinge or fold, half-folded or tabletop poses, the outer or inner display, reserved regions, arrangement views, side or vertical toolbars and tab bars, or wants an iOS app audited, fixed, or specced for iPhone Duo. Not for Android foldables, Galaxy Z Fold, Surface Duo, or general iPad multitasking.
 license: MIT
-allowed-tools: Read, Grep, Glob
+compatibility: Needs bash; ripgrep optional (falls back to grep). Verifying on a simulator needs Xcode 27.1 beta or later. No network.
+metadata:
+  version: "1.1.0"
+  author: tudorturcanu
+allowed-tools: Read Grep Glob Bash(bash ${CLAUDE_SKILL_DIR}/scripts/audit_duo_readiness.sh *) Bash(xcrun simctl list devicetypes*)
 ---
 
 # iPhone Duo design & implementation
@@ -10,11 +14,9 @@ allowed-tools: Read, Grep, Glob
 iPhone Duo is still an iPhone; all iOS guidance applies. New: two displays, a hinge, many poses,
 reserved regions, and bars that move to the side. Make the app **adapt**. Don't build a "Duo mode."
 
-Scope: instructions only, no installs or network. `scripts/audit_duo_readiness.sh` is read-only.
-Change only the app code the user asked about.
-
-For rationale, examples, and doc links, read `references/apple-hig-designing-for-iphone-duo.md`
-only when a rule below isn't enough.
+Scope: no installs or network; the audit script is read-only. Change only the app code the user asked about.
+`<skill-dir>` is this file's folder (`${CLAUDE_SKILL_DIR}` in Claude Code). For API signatures, rationale, and
+doc links, read [the reference](references/apple-hig-designing-for-iphone-duo.md) when a rule isn't enough.
 
 ## Mental model
 
@@ -26,90 +28,96 @@ only when a rule below isn't enough.
 | Inner, partially folded | regular | by orientation; the **folding region** splits the display |
 | Inner, Split View | varies | each app on its **outer** edge (left app → left edge) |
 
-Don't design per pose: a compact layout plus a regular layout, built on size classes, covers all of them.
-Reserved regions to avoid: outer camera (always; grows into the Dynamic Island), inner camera (only
-while active; UI shifts aside), folding region (only while partially folded).
+Don't design per pose: a compact plus a regular layout, built on size classes, covers all of them. Reserved regions:
+outer camera (always; grows into the Dynamic Island), inner camera (while active), fold (while partially folded).
+Build with the iOS 27.1 SDK: older builds get no side bars and sit beside the status bar and camera.
 
 ## Workflow
 
-1. **Audit.** Run `bash scripts/audit_duo_readiness.sh <app-path> -s` for counts (it also checks Info.plist and
-   build settings for `UIRequiresFullScreen`, which blocks all resizing: fix that first), then
-   `bash scripts/audit_duo_readiness.sh <app-path> -q` for up to 5 matches per category (`-n 0` for all).
-   Read each match in context: a fixed width on an icon is fine, on a container it isn't. Also look for
-   what grep can't see: custom bars pinned to the top or bottom, controls far from their content.
-2. **Prefer system components.** Standard bars, split views, sheets, alerts, and menus get side placement,
-   fold avoidance, and overflow for free.
-3. **Apply the rules** below to whatever custom UI remains.
-4. **Verify** with the checklist. Use an iPhone Duo simulator if installed
-   (`xcrun simctl list devicetypes | grep -i duo`); otherwise say so and approximate with iPad Split View /
-   Stage Manager and iPhone landscape.
-5. **Report** what changed, what you verified, and what you couldn't.
+1. **Audit.** Run `bash <skill-dir>/scripts/audit_duo_readiness.sh <app-path> -s` for counts, then `-q` for up to
+   5 matches per category (`-n 0` for all). Exit 2 means a bad path or nothing to scan, not a clean app.
+   Read each match in context (a fixed width on an icon is fine, on a container it isn't), then look for what
+   grep can't see: controls far from their content, views that jump when the device folds.
+2. **Prefer system components** (container-managed bars, split and arrangement views, sheets, menus): they get side
+   placement, fold avoidance, and overflow for free. **Apply the rules** below to whatever custom UI remains.
+3. **Verify** with the checklist. Use the iPhone Duo simulator if installed (Xcode 27.1 beta or later;
+   `xcrun simctl list devicetypes | grep -i duo`; change poses from Device Hub). Otherwise say so and
+   approximate with iPad Split View / Stage Manager and iPhone landscape.
+4. **Report** what changed, what you verified, and what you couldn't.
 
-> **API accuracy** (checked against Apple's docs, 2026-09-13). Confirmed: `NavigationSplitView`/`UISplitViewController`,
-> `ToolbarItemGroup`/`UIBarButtonItemGroup`, `ToolbarOverflowMenu`/`UINavigationItem.additionalOverflowItems`,
-> `Label`/`UIBarButtonItem`, `safeAreaInsets`. Visibility priority: SwiftUI `.visibilityPriority(.high)` on any
-> `ToolbarContent` (`.automatic`/`.low`/`.high`); UIKit `UIBarButtonItem.visibilityPriority` (`.high`/`.standard`/`.low`).
-> **Unconfirmed:** reserved regions (closest documented API is UIKit `layoutGuide(for: .safeArea(cornerAdaptation:))`,
-> not yet documented for the fold or cameras), arrangement-view types, pose/fold-state queries. Never guess these.
-> Check the SDK; if you can't, leave a marked `TODO` and tell the user.
+> **APIs** (checked against Apple's docs, 2026-09-26). Every API named in this file exists; the Duo-specific ones are
+> **iOS 27.1 beta**, so guard with `if #available(iOS 27.1, *)` below that target and check the project's SDK for
+> renames. Exact signatures are in the reference. Anything named in neither: don't guess, leave a marked `TODO`.
 
 ## Rules
 
 **Layout**
-- Size from size classes, layout margins, and safe-area insets. No `UIScreen.main.bounds`, fixed device
-  sizes, `userInterfaceIdiom` layout branches, or magic status-bar / Dynamic Island padding.
-- Ignore safe areas only on specific edges, and only for backgrounds, never scrolling or interactive content.
-- Expand the same layout as space grows. Inner display may add one hierarchy level (list + detail).
+- Size from size classes, layout margins, and safe-area insets. No `UIScreen.main` (ambiguous with two displays;
+  use the view's bounds, `window?.windowScene?.screen`, `traitCollection.displayScale`), fixed device sizes,
+  `userInterfaceIdiom` or orientation branches, or magic status-bar / Dynamic Island padding.
+- Insets differ per side: use `bounds.inset(by: safeAreaInsets)`, never `width - insets.left * 2`. Ignore safe
+  areas only on specific edges, and only for backgrounds, never scrolling or interactive content.
+- `UIRequiresFullScreen` doesn't stop resizing on open/close; remove it. The inner display ignores supported
+  orientations and scales locked apps, so fix the layout rather than the lock.
+- Expand the same layout as space grows. Inner display may add one hierarchy level (list + detail) or show the
+  tab bar as a sidebar in information-dense apps (`.defaultTabBarPlacement(.sidebar)`).
 - Same features and state on both displays and in every pose. Overflow is fine; missing features aren't.
 - Games may lock orientation but must fill every pose: change aspect ratio, don't letterbox (if forced,
   fill bars with artwork). Keep text and control sizes stable.
 
 **The fold**
 - Prefer self-adapting containers; standard split views balance panes when folded.
-- Grids: **even** column counts so the fold falls between items.
-- Custom elements the system won't move: keep them out of the center with the reserved-region APIs.
-- On fold, move only what would be hidden or hard to tap. Don't rearrange.
+- Custom views: read `reservedRegions(kind: .division)` (fold) and `.occlusion` (cameras) and keep text and tap
+  targets out of each region's `frame`. Only active regions return by default; pass `options: .includeInactive`
+  to plan ahead (for example, pick column counts whenever a fold exists).
+- Grids: **even** column counts so the fold falls between items; widen the gap at the fold, keep outer margins.
+- On fold, move the smallest meaningful group, and move related elements together. Don't rearrange.
+  Scrolling content (lists, feeds, articles) doesn't need to avoid the fold.
+- Tabletop layouts are optional (content on top, controls below). The hinge angle (`onHingeChange`) is for interactions, not layout.
 
-**Split & arrangement views**
-- Split views expand on the inner display and collapse on the outer, like regular ↔ compact.
-- Arrangement view = primary + secondary. *Split*: side by side when wide, stacked when tall (axes can be
-  limited). *Overlay*: views on either side of the fold when partially folded, else stacked; secondary can collapse.
-- `HStack`/`VStack` shapes → split arrangement; `ZStack` shapes → overlay.
-- Arrangement views don't navigate: put `NavigationSplitView`/`TabView` **around** them, never inside.
+**Arrangement views**
+- Primary + secondary container. *Split*: side by side when wide, stacked when tall (limit with
+  `.split.axes(.horizontal)`). *Overlay*: primary over secondary; when partially folded they sit on either
+  side of the fold. Collapse the secondary by reading `\.overlayArrangementZIndex` (UIKit: `state(for:)`).
+- `HStack`/`VStack` shapes → split (main/detail); `ZStack` shapes → overlay (foreground/background).
+- Put navigation **around** them. Never inside a `NavigationSplitView`, `List`, or `ScrollView`.
 
 **Side controls**
-- Keep the system's bar placement. Don't force bars back to top or bottom.
-- Content space is lopsided: inset with safe areas, including the other app's controls in Split View.
-- Order from the top: back/close → prominent action (Done) → remaining items in their original groups.
-- Group items (`ToolbarItemGroup`/`UIBarButtonItemGroup`); never fixed spacers.
-- Items overflow bottom-up. Set `visibilityPriority` on groups, then items, so frequent actions (Compose) and badges stay visible.
-- Every non-text item gets **title + symbol** (`Label("Compose", systemImage: "square.and.pencil")`);
-  the title appears in overflow. Avoid text-only buttons.
+- Only container-managed bars go to the side: `.toolbar` inside `NavigationStack`/`NavigationSplitView`/`TabView`,
+  or items on a navigation / tab bar controller. Replace custom `UIToolbar`/`UITabBar`/`UINavigationBar` and homemade bars.
+- Split views put only the detail column's bar on the side; inspectors stay horizontal; sheets on the outer
+  display go vertical, and on the inner display only when trailing (`presentationPlacement`).
+- Keep the system's placement. Turn side bars off (`.toolbarVerticalBehavior(.disabled)`) only for immersive,
+  single-purpose screens (Calculator 4×5 → 5×4, full-screen player) and never toggle it with view state.
+- Order from the top: back/close (`.cancellationAction`) → prominent action (`.topBarPinnedTrailing` /
+  `pinnedTrailingGroup`) → remaining items in their original groups.
+- Group items (`ToolbarItemGroup`/`UIBarButtonItemGroup`), one item per control; never fixed spacers or an
+  `HStack` of buttons in one `ToolbarItem`. Flexible spacers collapse to zero on the side.
+- Items overflow bottom-up: set `visibilityPriority` on groups, then items, to keep frequent actions; counts go in `.badge()`.
+- Every item gets **title + symbol** (`Label("Compose", systemImage: "square.and.pencil")`). Title-only and
+  custom-view items stay horizontal: opt a custom view in with `axisBehavior(.verticalPreferred)`; use
+  `.horizontalOnly` when the text matters (a cart total, a Select/Done toggle).
 - Out of space: navigation-focused view → items overflow, tab bar stays (default). Task-focused view →
-  minimize the tab bar, keep the toolbar.
-- Use the **system** overflow menu (`ToolbarOverflowMenu`/`additionalOverflowItems`); move custom "…"
-  actions into it. The ellipsis symbol means overflow only.
-- Keep controls with their content: list controls stay above the list; only trailing-pane controls go to the side.
-- Full-width, bar-free layouts are fine for immersive non-scrolling screens (Calculator 4×5 → 5×4) if they
-  avoid the Dynamic Island and status bar. So is a full-width background with inset scrolling content.
-- Keep control positions consistent across poses.
+  `.toolbarVerticalCompressionBehavior(.prefersToolbarItems)` / `verticalBarCompressionBehavior = .prefersBarItems`.
+- Move custom "…" actions into the **system** overflow (`ToolbarOverflowMenu`/`additionalOverflowItems`); ellipsis means overflow only.
+- Keep controls with their content (list controls stay above the list) and in consistent positions across poses.
+- Custom views that react to the side bar read `\.toolbarVerticalEdge` / `verticalBarEdge`; hero images extend under it (`backgroundExtensionEffect()`).
 
 ## Code shape
 
 ```swift
-// SwiftUI: controls stay with their pane; groups + labels let the system place and overflow them.
-NavigationSplitView {
-    MailboxList().toolbar { ToolbarItemGroup { FilterButton(); SortButton() } }
-} detail: {
-    MessageView().toolbar {
-        ToolbarItemGroup(placement: .primaryAction) {
-            Button(action: compose) { Label("Compose", systemImage: "square.and.pencil") }
+// SwiftUI: navigation around the arrangement; grouped, labeled items the system can place and overflow.
+NavigationStack {
+    ArrangementView { PlayerView() } secondary: { UpNextView() }
+        .arrangementViewStyle(.split.axes(.horizontal))       // stacked views would be too short
+        .toolbar {
+            ToolbarItem(placement: .topBarPinnedTrailing) { Button("Done", action: done) }
+            ToolbarItemGroup {
+                Button(action: queue) { Label("Queue", systemImage: "text.badge.plus") }
+            }
+            .visibilityPriority(.high)                          // last to overflow when space runs out
+            ToolbarOverflowMenu { Button("Share", systemImage: "square.and.arrow.up", action: share) }
         }
-        .visibilityPriority(.high)                      // Compose outlasts Archive when space runs out
-        ToolbarItemGroup {
-            Button(action: archive) { Label("Archive", systemImage: "archivebox") }
-        }
-    }
 }
 ```
 
@@ -122,22 +130,21 @@ navigationItem.trailingItemGroups = [UIBarButtonItemGroup(barButtonItems: [compo
 navigationItem.additionalOverflowItems = UIDeferredMenuElement.uncached { done in
     done([UIAction(title: "Print", image: UIImage(systemName: "printer")) { _ in }])
 }
-// Root: UISplitViewController(style: .doubleColumn). Lay out from safe area, never UIScreen.main.bounds.
+let arrangement = UIArrangementViewController()   // root of a UINavigationController; .secondary works the same
+arrangement.setViewController(PlayerViewController(), for: .primary)
 ```
 
 ## Verification checklist
 
 Mark each row verified, fixed, or not verifiable.
 
+- [ ] Built with the iOS 27.1 SDK; no `UIRequiresFullScreen`; audit re-run and remaining hits explained
 - [ ] Outer display, portrait & landscape: bars on the side, nothing under the outer camera
-- [ ] Inner portrait: horizontal bars, extra hierarchy level if appropriate
-- [ ] Inner landscape: bars stay on the side
-- [ ] Partially folded: no text or tap targets in the fold, panes balanced, even grid columns
-- [ ] Inner camera active: UI moves aside
-- [ ] Live Activity on outer display: Dynamic Island doesn't cover content
-- [ ] Split View as left and right app: controls on the outer edge, content inset from both edges
+- [ ] Inner portrait: horizontal bars, extra hierarchy level if appropriate; inner landscape: bars on the side
+- [ ] Partially folded: no text or tap targets in the fold, panes balanced, even grid columns, minimal movement
+- [ ] Inner camera active, and a Live Activity on the outer display: nothing important is covered
+- [ ] Split View as left and right app, and right-to-left: controls on the outer / hardware edge, content inset
 - [ ] Outer ↔ inner transition keeps state (scroll, selection, drafts)
 - [ ] Narrowest size: key actions visible, the rest in the system overflow menu
-- [ ] Every toolbar item has title + symbol; no custom ellipsis menu
-- [ ] Right-to-left: side controls stay on the hardware side
+- [ ] Every toolbar item has title + symbol; no custom ellipsis menu; no custom bars
 - [ ] Games: screen filled in every pose, no plain black letterbox

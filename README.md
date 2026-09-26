@@ -4,7 +4,7 @@
 [![Antigravity Skill](https://img.shields.io/badge/Antigravity-Skill-blue.svg)](https://antigravity.google)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-orange.svg)](https://anthropic.com)
 [![Swift](https://img.shields.io/badge/Swift-6.0-green.svg)](https://swift.org)
-[![iOS](https://img.shields.io/badge/iOS-18%2B-lightgrey.svg)](https://developer.apple.com/ios/)
+[![iOS](https://img.shields.io/badge/iOS%2027.1%20SDK-iPhone%20Duo-lightgrey.svg)](https://developer.apple.com/iphone-duo/)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 
 An agent skill that teaches AI pair programmers (**Google Antigravity**, **Claude Code**, and compatible agentic tools) how to design, audit, and adapt iOS apps for **iPhone Duo** — Apple's dual-display, hinged iPhone.
@@ -18,7 +18,7 @@ iPhone Duo introduces a dual-display form factor with a center hinge, dynamic de
 This skill equips coding assistants to:
 1. **Audit existing codebases for resize hostility** (fixed frames, `UIScreen.main.bounds`, homemade tab bars, manual spacers).
 2. **Refactor layouts to use native system components** that automatically adapt to side placement, fold avoidance, and overflow.
-3. **Avoid API hallucinations** by strictly adhering to confirmed Apple APIs (`NavigationSplitView`, `UIBarButtonItemGroup`, `additionalOverflowItems`) and leaving marked TODOs rather than inventing speculative APIs.
+3. **Use the real iPhone Duo APIs** (iOS 27.1 beta, checked against Apple's docs): reserved regions (`reservedRegions(kind: .division)`), arrangement views (`ArrangementView`, `UIArrangementViewController`), and the side-bar APIs (`visibilityPriority`, `axisBehavior`, `toolbarVerticalCompressionBehavior`). Anything not in the skill gets a marked TODO instead of an invented name.
 4. **Follow Apple Human Interface Guidelines (HIG)** for device poses (flat, book-style, standing) without designing fragmented "per-pose" code branches.
 
 ---
@@ -70,14 +70,14 @@ bash $S path/to/ios/project -q       # up to 5 matches per category, hide clean 
 bash $S path/to/ios/project -n 0     # every match
 ```
 
-It flags 15 categories of anti-pattern, grouped as:
+It flags 19 categories of anti-pattern, grouped as:
 
 | Group | Examples |
 |---|---|
 | Resizing opt-out | `UIRequiresFullScreen` in `Info.plist` or build settings |
-| Display-specific sizing | `UIScreen.main.bounds` / `screen.bounds` / `nativeBounds`, hard-coded iPhone dimensions, fixed frames ≥ 300 pt, `userInterfaceIdiom` and device-model checks, `UIDevice.current.orientation` layout branches |
-| Safe areas & reserved regions | blanket `.ignoresSafeArea()`, hard-coded status bar and home indicator insets |
-| Bars & overflow | `.fixedSpace`, `Spacer()` between toolbar items, custom `ellipsis` menus, hidden system tab bars (`.toolbar` / `.toolbarVisibility`), image-only `UIBarButtonItem`s, deprecated `NavigationView` |
+| Display-specific sizing | any `UIScreen.main`, `screen.bounds` / `nativeBounds`, hard-coded iPhone dimensions, fixed frames ≥ 300 pt, `userInterfaceIdiom` and device-model checks, `UIDevice.current.orientation` layout branches |
+| Safe areas & reserved regions | blanket `.ignoresSafeArea()` / `(.container, edges: .all)`, `insets.left * 2` math, hard-coded status bar and home indicator insets |
+| Bars & overflow | custom `UIToolbar` / `UITabBar` / `UINavigationBar` and homemade tab bars, `.fixedSpace`, `Spacer()` between toolbar items, several controls in one `ToolbarItem`, symbol-only items (SwiftUI and UIKit), custom `ellipsis` menus, hidden system tab bars, disabled side bars, deprecated `NavigationView` |
 | The fold | odd column counts in `GridItem` arrays and compositional layouts, orientation locks |
 
 Every hit is a candidate, not a verdict. The agent reads each one in context before changing it.
@@ -86,9 +86,11 @@ Every hit is a candidate, not a verdict. The agent reads each one in context bef
 
 ## 🧪 Testing & Evals
 
-Three benchmark prompts with realistic fixtures live in `tests/evals/evals.json`. They are prompts plus expected outcomes, not an automated harness; run them with your agent and grade the result against `expected_output`.
+Five benchmark prompts live in `tests/evals/evals.json`, in the [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) format. Each has pass/fail `expectations` to grade against. `files` paths are relative to the repository root, not the skill folder. `tests/evals/trigger_evals.json` holds 20 queries (10 should trigger, 10 near misses such as Galaxy Fold or iPad Stage Manager) for tuning the description.
 
-CI runs `shellcheck` on the audit script and guards its accuracy in both directions, with `rg` and with `grep`:
+The prompts cover the SwiftUI fixture, the UIKit fixture, a design spec, already-clean code (no over-editing), and the exact fold APIs.
+
+CI validates the `SKILL.md` frontmatter (name, description length, `allowed-tools` syntax, version matching `CHANGELOG.md`) and the eval files, runs `shellcheck` on the audit script, and guards the script's accuracy in both directions, with `rg` and with `grep`:
 - every line marked `// duo-bad` in `tests/fixtures/Patterns/` must be flagged, and nothing else;
 - `tests/fixtures/Clean/` (correct code that looks similar) must report nothing.
 
@@ -102,9 +104,10 @@ Only `skills/iphone-duo-design/` is installed. Tests and CI stay in the repo.
 │   ├── scripts/
 │   │   └── audit_duo_readiness.sh        # Read-only audit script (capped output)
 │   └── references/
-│       └── apple-hig-designing-for-iphone-duo.md # Condensed HIG reference + confirmed API names
+│       └── apple-hig-designing-for-iphone-duo.md # Condensed HIG + developer guidance + API reference
 ├── tests/
-│   ├── evals/evals.json                  # Benchmark evals (SwiftUI, UIKit, and Spec)
+│   ├── evals/evals.json                  # Benchmark evals with graded expectations
+│   ├── evals/trigger_evals.json          # Should / shouldn't trigger queries
 │   └── fixtures/
 │       ├── NotesApp/                     # SwiftUI tab bar, grid & toolbar anti-patterns
 │       ├── GalleryApp/                   # UIKit frame & custom toolbar anti-patterns
@@ -134,7 +137,7 @@ The guidance summarized in `skills/iphone-duo-design/references/` comes from App
 
 ## 🤝 Contributing
 
-Found an anti-pattern the audit misses, or an API the HIG now names? Open an issue or PR. Keep `skills/iphone-duo-design/SKILL.md` under 150 lines (CI enforces it) so it stays cheap for agents to load; put long material in `references/`. Security issues: see [SECURITY.md](SECURITY.md).
+Found an anti-pattern the audit misses, or an API Apple has added or renamed? Open an issue or PR. Keep `skills/iphone-duo-design/SKILL.md` under 150 lines (CI enforces it) so it stays cheap for agents to load; put long material in `references/`. Security issues: see [SECURITY.md](SECURITY.md).
 
 ## 📄 License
 

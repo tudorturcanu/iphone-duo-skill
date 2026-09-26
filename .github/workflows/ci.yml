@@ -17,21 +17,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install ripgrep and shellcheck
-        run: sudo apt-get install -y -qq ripgrep shellcheck >/dev/null
+      - name: Install ripgrep, shellcheck, and PyYAML
+        run: sudo apt-get install -y -qq ripgrep shellcheck python3-yaml >/dev/null
 
       - name: shellcheck
         run: shellcheck skills/iphone-duo-design/scripts/*.sh
 
-      - name: SKILL.md frontmatter
+      - name: SKILL.md frontmatter and size
         run: |
-          f=skills/iphone-duo-design/SKILL.md
-          head -1 "$f" | grep -qx -- '---'
-          grep -q '^name: iphone-duo-design$' "$f"
-          grep -q '^description: ' "$f"
-          lines=$(wc -l < "$f")
-          echo "SKILL.md: $lines lines"
-          [ "$lines" -le 150 ]
+          python3 - <<'PY'
+          import json, os, re, sys, yaml
+          d = "skills/iphone-duo-design"
+          text = open(f"{d}/SKILL.md").read()
+          m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+          assert m, "SKILL.md must start with YAML frontmatter"
+          fm = yaml.safe_load(m.group(1))
+          errors = []
+          if fm.get("name") != os.path.basename(d): errors.append("name must match the folder name")
+          if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", fm.get("name", "")) or len(fm["name"]) > 64: errors.append("invalid name")
+          desc = fm.get("description", "")
+          if not 1 <= len(desc) <= 1024: errors.append(f"description is {len(desc)} chars (1-1024)")
+          if re.search(r"[<>]", desc): errors.append("description must not contain angle brackets")
+          if len(fm.get("compatibility", "")) > 500: errors.append("compatibility over 500 chars")
+          if "," in str(fm.get("allowed-tools", "")): errors.append("allowed-tools is space-separated, not comma-separated")
+          meta = fm.get("metadata", {})
+          if not all(isinstance(v, str) for v in meta.values()): errors.append("metadata values must be strings")
+          top = re.search(r"^## \[(\d+\.\d+\.\d+)\]", open("CHANGELOG.md").read(), re.M).group(1)
+          if meta.get("version") != top: errors.append(f"metadata.version {meta.get('version')} != CHANGELOG {top}")
+          lines = text.count("\n")
+          print(f"SKILL.md: {lines} lines, description {len(desc)} chars")
+          if lines > 150: errors.append("SKILL.md over 150 lines")
+          for link in re.findall(r"\]\(((?:references|scripts)/[^)#]+)\)", text):
+              if not os.path.exists(f"{d}/{link}"): errors.append(f"broken link {link}")
+          sys.exit("\n".join(errors) if errors else 0)
+          PY
+
+      - name: Evals are well-formed
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          errors = []
+          evals = json.load(open("tests/evals/evals.json"))
+          for e in evals["evals"]:
+              if not e.get("expectations"): errors.append(f"eval {e['id']} has no expectations")
+              errors += [f"eval {e['id']}: missing {f}" for f in e.get("files", []) if not os.path.exists(f)]
+          trig = json.load(open("tests/evals/trigger_evals.json"))
+          pos = sum(t["should_trigger"] for t in trig)
+          if pos == 0 or pos == len(trig): errors.append("trigger evals need both positive and negative queries")
+          print(f"{len(evals['evals'])} evals, {len(trig)} trigger queries ({pos} positive)")
+          sys.exit("\n".join(errors) if errors else 0)
+          PY
 
       - name: Audit catches every marked anti-pattern and nothing in clean code
         run: |
