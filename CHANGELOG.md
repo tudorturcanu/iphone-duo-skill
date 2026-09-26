@@ -2,6 +2,19 @@
 
 All notable changes to this skill are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.2.2] - 2026-09-26
+
+### Added
+- Weekly CI check of the 39 Apple APIs the skill names (`tests/apple-apis.tsv`, `tests/check_apple_apis.py`): it
+  fails when one disappears or its availability changes, for example when the iOS 27.1 APIs leave beta.
+
+### Changed
+- Reserved regions: going from flat to half-folded may not resize the view. Agents now test whether layout reruns
+  and fall back to `setNeedsLayout()` from a `UIHingeInteraction`, instead of claiming it does.
+- Evals: sharper expectations (even columns on fold devices, `#available` guards, bar placement in explanations,
+  default query behavior split in two, tabletop palettes, state across folds).
+- Benchmark (v1.2.1, third round): 41/42 expectations with the skill vs 26/42 without (97% vs 61%).
+
 ## [1.2.1] - 2026-09-26
 
 A claim-by-claim fact-check of both files against Apple's docs, tech talks, and Apple forum answers, plus a

@@ -4,7 +4,7 @@ description: Adapts, builds, and reviews SwiftUI and UIKit apps for iPhone Duo, 
 license: MIT
 compatibility: Needs bash; ripgrep optional (falls back to grep). Verifying on a simulator needs Xcode 27.1 beta (27.2 beta lacks the Duo SDK). No network.
 metadata:
-  version: "1.2.1"
+  version: "1.2.2"
   author: tudorturcanu
 allowed-tools: Read Grep Glob Bash(bash ${CLAUDE_SKILL_DIR}/scripts/audit_duo_readiness.sh *) Bash(xcrun simctl list devicetypes*)
 ---
@@ -79,7 +79,8 @@ it short, and put API names in a brief "Implementation notes" section at the end
 - Custom views: read `reservedRegions(kind: .division)` (fold) and `.occlusion` (cameras) and keep text and tap
   targets out of each region's `frame`, which is in the queried view's coordinates. No change callback is
   documented, so read them where layout happens (`layoutSubviews`, `viewDidLayoutSubviews`, `GeometryReader`,
-  `onGeometryChange`). The fold is active only while partially folded; flat, it's inactive with zero width. Only active regions return by default; `options: .includeInactive`
+  `onGeometryChange`). Flat → half-folded may not resize the view, so don't claim layout reruns: test it, and if it
+  doesn't, call `setNeedsLayout()` from a `UIHingeInteraction`. Flat, the fold is inactive with zero width. Only active regions return by default; `options: .includeInactive`
   also returns the fold while the device is flat, so you can plan ahead.
 - Grids: compute columns from the width and round up to **even** whenever a division exists (active or not); `.adaptive`
   alone can be odd. Scrolling grids needn't avoid the fold (Apple DTS); adjust only non-scrolling sections around it.
