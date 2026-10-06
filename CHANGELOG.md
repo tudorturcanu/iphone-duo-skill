@@ -2,6 +2,30 @@
 
 All notable changes to this skill are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.3.0] - 2026-10-06
+
+Prompted by Apple's news post [Prepare and submit your apps for iPhone Duo](https://developer.apple.com/news/?id=kkphp5qo)
+(2026-10-05).
+
+### Added
+- `references/shipping.md`: iPhone Duo is available October 23, 2026 (running iOS 27.1); from April 2027 every
+  submission needs iPhone Duo screenshots. Screenshot sizes (outer 1398 × 2034, inner 2007 × 2853, plus landscape),
+  app preview specs, product page assets, the App Store Connect preview tool, and the Figma and Sketch design kits,
+  checked against the raw App Store Connect pages. It notes that the screenshot specifications page doesn't list
+  the April 2027 requirement yet.
+- `references/cameras-and-scene-accessories.md`: the virtual front camera, following camera direction with
+  `AVCaptureDeviceDirectionCoordinator` (mirroring, descriptors, one coordinator per view), and camera capture scene
+  accessories for the outer display. The 18 APIs it names join the weekly check (57 in all).
+- `tests/check_apple_sources.py`, run weekly (`hig-drift.yml`, job `sources`): compares facts from the launch news
+  post, the screenshot and preview specs, and the Xcode 27.1 release notes, and flags new iPhone Duo news posts.
+- Workflow step 5 (only if asked) points to both files; the description now triggers on submission and camera
+  questions. An eval (id 6) and two trigger queries cover submission questions.
+
+### Changed
+- Xcode 27.1 is now a release candidate, no longer a beta. The iOS 27.1 APIs are still marked beta in Apple's docs.
+- HIG article re-checked: guidance is unchanged; it now links the screenshot specifications. Hash updated.
+- The submission and camera material lives in their own files, so `SKILL.md` stays at 158 lines and loads them on demand.
+
 ## [1.2.2] - 2026-09-26
 
 ### Added

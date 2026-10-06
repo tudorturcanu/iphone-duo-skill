@@ -18,8 +18,10 @@ iPhone Duo introduces a dual-display form factor with a center hinge, dynamic de
 This skill equips coding assistants to:
 1. **Audit existing codebases for resize hostility** (fixed frames, `UIScreen.main.bounds`, homemade tab bars, manual spacers).
 2. **Refactor layouts to use native system components** that automatically adapt to side placement, fold avoidance, and overflow.
-3. **Use the real iPhone Duo APIs** (iOS 27.1 beta, checked against Apple's docs): reserved regions (`reservedRegions(kind: .division)`), arrangement views (`ArrangementView`, `UIArrangementViewController`), and the side-bar APIs (`visibilityPriority`, `axisBehavior`, `toolbarVerticalCompressionBehavior`). Anything not in the skill gets a marked TODO instead of an invented name.
+3. **Use the real iPhone Duo APIs** (iOS 27.1, still beta in Apple's docs; checked against them): reserved regions (`reservedRegions(kind: .division)`), arrangement views (`ArrangementView`, `UIArrangementViewController`), and the side-bar APIs (`visibilityPriority`, `axisBehavior`, `toolbarVerticalCompressionBehavior`). Anything not in the skill gets a marked TODO instead of an invented name.
 4. **Follow Apple Human Interface Guidelines (HIG)** for device poses (flat, book-style, standing) without designing fragmented "per-pose" code branches.
+5. **Get the app into the store**: iPhone Duo screenshot and app preview sizes, and the April 2027 screenshot requirement, when you ask about submission.
+6. **Handle cameras and the outer display**: the virtual front camera, `AVCaptureDeviceDirectionCoordinator`, and camera capture scene accessories, when the app captures photos or video.
 
 ---
 
@@ -94,7 +96,7 @@ CI validates the `SKILL.md` frontmatter (name, description length, `allowed-tool
 - every line marked `// duo-bad` in `tests/fixtures/Patterns/` must be flagged, and nothing else;
 - `tests/fixtures/Clean/` (correct code that looks similar) must report nothing.
 
-A weekly job (`hig-drift.yml`) fails when Apple changes the HIG article, so the reference gets re-checked. It stores only a hash of the article, never Apple's text. The same job checks the 39 Apple APIs the skill names (`tests/apple-apis.tsv`) against Apple's docs and fails when one disappears or its availability changes, for example when the iOS 27.1 APIs leave beta. After reviewing a change, run `python3 tests/check_apple_apis.py --update`. Tip: Apple serves HIG and API pages as Markdown at `developer.apple.com/tutorials/data/<path>.md`, which is how the API names in `references/` were verified.
+A weekly job (`hig-drift.yml`) fails when Apple changes the HIG article, so the reference gets re-checked. A third check (`tests/check_apple_sources.py`) compares a few facts from the launch news post, the App Store Connect screenshot and preview specs, and the Xcode 27.1 release notes, and flags new iPhone Duo news posts. It stores only a hash of the article, never Apple's text. The same job checks the 39 Apple APIs the skill names (`tests/apple-apis.tsv`) against Apple's docs and fails when one disappears or its availability changes, for example when the iOS 27.1 APIs leave beta. After reviewing a change, run `python3 tests/check_apple_apis.py --update`. Tip: Apple serves HIG and API pages as Markdown at `developer.apple.com/tutorials/data/<path>.md`, which is how the API names in `references/` were verified.
 
 Only `skills/iphone-duo-design/` is installed. Tests and CI stay in the repo.
 
@@ -104,12 +106,15 @@ Only `skills/iphone-duo-design/` is installed. Tests and CI stay in the repo.
 │   ├── scripts/
 │   │   └── audit_duo_readiness.sh        # Read-only audit script (capped output)
 │   └── references/
-│       └── apple-hig-designing-for-iphone-duo.md # Condensed HIG + developer guidance + API reference
+│       ├── apple-hig-designing-for-iphone-duo.md # Condensed HIG + developer guidance + API reference
+│       ├── cameras-and-scene-accessories.md      # Camera direction, virtual front camera, outer-display accessories
+│       └── shipping.md                           # Launch dates, App Store screenshot and preview specs
 ├── tests/
 │   ├── evals/evals.json                  # Benchmark evals with graded expectations
 │   ├── evals/trigger_evals.json          # Should / shouldn't trigger queries
 │   ├── apple-apis.tsv                    # Apple APIs the skill names + recorded availability
 │   ├── check_apple_apis.py               # Weekly check of those APIs against Apple's docs
+│   ├── check_apple_sources.py            # Weekly check of launch news, App Store specs, Xcode status
 │   └── fixtures/
 │       ├── NotesApp/                     # SwiftUI tab bar, grid & toolbar anti-patterns
 │       ├── GalleryApp/                   # UIKit frame & custom toolbar anti-patterns
@@ -117,7 +122,7 @@ Only `skills/iphone-duo-design/` is installed. Tests and CI stay in the repo.
 │       └── Clean/                        # Correct look-alike code; must report nothing
 ├── .github/workflows/
 │   ├── ci.yml                            # shellcheck + audit accuracy and output-size tests
-│   └── hig-drift.yml                     # Weekly: HIG article hash + Apple API availability
+│   └── hig-drift.yml                     # Weekly: HIG hash, API availability, launch sources
 ├── SECURITY.md
 └── CHANGELOG.md
 ```

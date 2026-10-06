@@ -8,9 +8,9 @@ text or images. Read the sources for exact wording and diagrams:
 
 - HIG article: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
   (Markdown version: https://developer.apple.com/tutorials/data/design/human-interface-guidelines/designing-for-iphone-duo.md).
-  Last checked against the source on 2026-09-26. Its content changed after 2026-09-13 (tracked by hash in
-  `tests/hig-duo.sha256`) while its change log still lists only September 9; it now names the reserved-region,
-  arrangement-view, and compression APIs.
+  Last checked against the source on 2026-10-06. Its content changed after 2026-09-13 and again by 2026-10-06
+  (tracked by hash in `tests/hig-duo.sha256`) while its change log still lists only September 9; it names the
+  reserved-region, arrangement-view, and compression APIs and now links the screenshot specifications.
 - Developer article: https://developer.apple.com/documentation/technologyoverviews/preparing-your-app-for-iphone-duo
 - Related: [Designing for iOS](https://developer.apple.com/design/human-interface-guidelines/designing-for-ios),
   [Layout](https://developer.apple.com/design/human-interface-guidelines/layout),
@@ -21,7 +21,9 @@ text or images. Read the sources for exact wording and diagrams:
 - Tech Talks (`developer.apple.com/videos/play/tech-talks/<id>`): 111461 *Prepare your app*, 111462 *Raise the bar*,
   111463 *Strike a pose* (adaptive layouts), 111464 *Multiple displays and scenes*, 111465 *Camera*, 111466 *Design for iPhone Duo*.
 - Testing: [Device Hub](https://developer.apple.com/documentation/xcode/device-hub) in Xcode previews poses.
-  The iPhone Duo SDK and simulator ship in Xcode 27.1 beta.
+  The iPhone Duo SDK and simulator ship in Xcode 27.1 (release candidate on 2026-10-06).
+- Launch: [Prepare and submit your apps for iPhone Duo](https://developer.apple.com/news/?id=kkphp5qo) (2026-10-05),
+  hub page [developer.apple.com/iphone-duo](https://developer.apple.com/iphone-duo/) (talks, workshops, forums).
 
 ## Contents
 
@@ -32,6 +34,7 @@ text or images. Read the sources for exact wording and diagrams:
 5. [Beyond the HIG](#5-beyond-the-hig-developer-article-and-tech-talks): SDK, screens, bars, displacement, scenes, testing
 6. [API reference](#6-api-reference): exact names and signatures
 7. [Code patterns](#7-code-patterns): UIKit bars, fold-aware layout, even-column grids
+8. Separate files: [cameras and scene accessories](cameras-and-scene-accessories.md), [shipping to the App Store](shipping.md)
 
 ## 1. What the device is
 
@@ -257,20 +260,20 @@ Rules:
   `TabView` its selected tab), so disabling it for one immersive screen belongs on a full-screen cover or sheet.
 
 **Testing**
-- iPhone Duo SDK and simulator: Xcode 27.1 beta only (the 27.2 beta notes say to use 27.1). Poses come from Device
+- iPhone Duo SDK and simulator: Xcode 27.1 only (RC on 2026-10-06; the 27.2 beta notes say to use 27.1). Poses come from Device
   Hub; Xcode Previews have a "Display" override for the outer display.
 - Simulator known issues (Xcode 27.1 notes): StandBy unavailable, most app extensions (widgets, Live Activities)
   can't run or be debugged. Verify those on a device.
 - Screenshots: `xcrun simctl io <device> enumerate` lists displays; pass `screenshot --display=<id>` to capture the
   one in use.
 
-**Camera and other topics** (outside this skill's layout focus): see *Choosing a camera by the direction it
-faces* (AVKit) and *Registering a camera capture accessory on iPhone Duo* (AVFoundation), and tech talks 111464–111465.
+**Cameras and scene accessories:** [cameras-and-scene-accessories.md](cameras-and-scene-accessories.md) (tech talks
+111464–111465). **App Store submission:** [shipping.md](shipping.md).
 Don't hard-code "Face ID" in UI text; read `LAContext().biometryType`.
 
 ## 6. API reference
 
-Checked against Apple's developer docs on 2026-09-26. **iOS 27.1, beta** unless noted. Guard with
+Checked against Apple's developer docs on 2026-10-06. **iOS 27.1, still marked beta** unless noted. Guard with
 `if #available(iOS 27.1, *)` when the deployment target is lower.
 
 **Reserved regions**

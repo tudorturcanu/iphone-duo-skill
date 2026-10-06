@@ -1,10 +1,10 @@
 ---
 name: iphone-duo-design
-description: Adapts, builds, and reviews SwiftUI and UIKit apps for iPhone Duo, Apple's dual-display hinged iPhone (the folding, book-style iPhone with an outer and inner display). Use whenever the user mentions iPhone Duo, a foldable or dual-screen iPhone, the hinge or fold, half-folded, book or tabletop poses, reserved regions, arrangement views, side or vertical toolbars and tab bars on iPhone, or wants an iOS app audited, fixed, or specced for iPhone Duo. Not for Android foldables (Galaxy Z Fold or Flip), Surface Duo, visionOS, external displays, or general iPad multitasking.
+description: Adapts, builds, and reviews SwiftUI and UIKit apps for iPhone Duo, Apple's dual-display hinged iPhone (the folding, book-style iPhone with an outer and inner display). Use whenever the user mentions iPhone Duo, a foldable or dual-screen iPhone, the hinge or fold, half-folded, book or tabletop poses, reserved regions, arrangement views, side or vertical toolbars and tab bars on iPhone, or wants an iOS app audited, fixed, specced, or prepared for App Store submission (screenshots, previews) for iPhone Duo, or has a camera app that must follow which way each display's camera faces. Not for Android foldables (Galaxy Z Fold or Flip), Surface Duo, visionOS, external displays, or general iPad multitasking.
 license: MIT
-compatibility: Needs bash; ripgrep optional (falls back to grep). Verifying on a simulator needs Xcode 27.1 beta (27.2 beta lacks the Duo SDK). No network.
+compatibility: Needs bash; ripgrep optional (falls back to grep). Verifying on a simulator needs Xcode 27.1 (RC on 2026-10-06; the 27.2 beta lacks the Duo SDK). No network.
 metadata:
-  version: "1.2.2"
+  version: "1.3.0"
   author: tudorturcanu
 allowed-tools: Read Grep Glob Bash(bash ${CLAUDE_SKILL_DIR}/scripts/audit_duo_readiness.sh *) Bash(xcrun simctl list devicetypes*)
 ---
@@ -14,9 +14,9 @@ allowed-tools: Read Grep Glob Bash(bash ${CLAUDE_SKILL_DIR}/scripts/audit_duo_re
 iPhone Duo is still an iPhone; all iOS guidance applies. New: two displays, a hinge, many poses,
 reserved regions, and bars that move to the side. Make the app **adapt**. Don't build a "Duo mode."
 
-Scope: no installs or network; the audit script is read-only. Change only the app code the user asked about.
-`<skill-dir>` is this file's folder (`${CLAUDE_SKILL_DIR}` in Claude Code). For API signatures, rationale, and
-doc links, read [the reference](references/apple-hig-designing-for-iphone-duo.md) when a rule isn't enough.
+No installs or network; the audit script is read-only. `<skill-dir>` is this file's folder (`${CLAUDE_SKILL_DIR}` in
+Claude Code). For API signatures, rationale, and doc links, read
+[the reference](references/apple-hig-designing-for-iphone-duo.md) when a rule isn't enough.
 
 ## Mental model
 
@@ -45,16 +45,19 @@ Build with the iOS 27.1 SDK: older builds get no side bars and sit beside the st
    files (`xcrun --sdk iphonesimulator swiftc -typecheck`); iOS 27.1 APIs need that SDK. Then walk the checklist
    on the iPhone Duo simulator (`xcrun simctl list devicetypes | grep -i duo`; poses from Device Hub; a black
    screenshot means the other display: `simctl io <device> enumerate`, then `screenshot --display=`). Widgets, Live
-   Activities, and most extensions don't run there. No simulator: say so, approximate with iPad Split View.
+   Activities, and most extensions don't run there. No simulator: say so; approximate with iPad Split View.
 4. **Report** what changed, what you verified, and what you couldn't.
+5. **Only if asked:** App Store assets and the April 2027 screenshot requirement: [shipping](references/shipping.md);
+   camera apps and outer-display content: [cameras](references/cameras-and-scene-accessories.md).
 
-Scope: fix what breaks on iPhone Duo. Move actions, never drop them, and don't add features, actions, or data
-sources nobody asked for. React Native / Flutter bars drawn in JS or Dart never move to the side. **Design specs** (no code): describe what people see in each pose in plain words, keep
-it short, and put API names in a brief "Implementation notes" section at the end.
+Scope: change only the app code the user asked about; fix what breaks. Move actions, never drop them, and don't add
+features or data sources nobody asked for. React Native / Flutter bars drawn in JS or Dart never move to the side.
+**Design specs** (no code): describe what people see in each pose in plain words, keep it short, and put API names
+in a brief "Implementation notes" section at the end.
 
-> **APIs** (checked against Apple's docs, 2026-09-26). Every API named in this file exists. Fold, arrangement, hinge,
-> and vertical-bar APIs are **iOS 27.1 beta**; `visibilityPriority`, `ToolbarOverflowMenu`, `.topBarPinnedTrailing` are
-> 27.0. Guard with `#available` below the deployment target. Signatures are in the reference; anything named in
+> **APIs** (checked against Apple's docs, 2026-10-06). Every API named in this file exists. Fold, arrangement, hinge,
+> and vertical-bar APIs are **iOS 27.1** (still marked beta in the docs); `visibilityPriority`,
+> `ToolbarOverflowMenu`, `.topBarPinnedTrailing` are 27.0. Guard with `#available` below the deployment target. Signatures are in the reference; anything named in
 > neither: don't guess, leave a marked `TODO`.
 
 ## Rules
@@ -123,7 +126,7 @@ it short, and put API names in a brief "Implementation notes" section at the end
 - Keep controls with their content (list controls stay above the list) and in consistent positions across poses.
 - Custom views that react to the side bar read `\.toolbarVerticalEdge` / `verticalBarEdge`; hero images extend under it (`backgroundExtensionEffect()`).
 
-## Code shape
+## Code shape (UIKit and fold-aware layout: [reference §7](references/apple-hig-designing-for-iphone-duo.md#7-code-patterns))
 
 ```swift
 // SwiftUI: navigation around the arrangement; grouped, labeled items the system can place and overflow.
@@ -140,8 +143,6 @@ NavigationStack {
         }
 }
 ```
-
-UIKit versions of this, a fold-aware `layoutSubviews`, and an even-column grid: [reference §7](references/apple-hig-designing-for-iphone-duo.md#7-code-patterns).
 
 ## Verification checklist (mark each row verified, fixed, or not verifiable)
 

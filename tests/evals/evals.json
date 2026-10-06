@@ -96,6 +96,20 @@
         "Uses no API names outside the skill's reference and standard UIKit",
         "In tabletop (horizontal fold) the palettes go to the lower half; claims that layout reruns on fold are tested or hedged, not asserted"
       ]
+    },
+    {
+      "id": 6,
+      "prompt": "Our app is already adapted for iPhone Duo and we're about to submit to the App Store. What do we need to provide for the listing, and by when? Give exact sizes, and don't make anything up that you're unsure of.",
+      "expected_output": "States the October 23, 2026 availability and that Xcode 27.1 is the minimum; says iPhone Duo screenshots become mandatory for submissions starting April 2027; gives screenshot sizes for both displays in both orientations and the app preview sizes; notes that the specs page may lag the news post; no invented requirements.",
+      "files": [],
+      "expectations": [
+        "States that iPhone Duo screenshots are required for submissions starting April 2027 (and that submitting optimized apps is possible now)",
+        "Gives the screenshot sizes: outer 1398 x 2034 (or 2034 x 1398) and inner 2007 x 2853 (or 2853 x 2007)",
+        "Mentions app previews at 886 x 1920 or 1920 x 886, 15 to 30 seconds",
+        "States that iPhone Duo is available October 23, 2026 and that builds need Xcode 27.1",
+        "Says the screenshots should show the adapted layouts (outer compact, inner regular) rather than scaled iPhone screenshots, or mentions the App Store Connect preview tool",
+        "Flags that the screenshot specifications page doesn't yet list the April 2027 requirement (or tells the user to re-check Apple's pages) instead of presenting everything as settled"
+      ]
     }
   ]
 }

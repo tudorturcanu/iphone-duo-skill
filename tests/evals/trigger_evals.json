@@ -32,7 +32,7 @@
     "should_trigger": true
   },
   {
-    "query": "review GalleryViewController.swift for iPhone Duo \u2014 the grid straddles the fold",
+    "query": "review GalleryViewController.swift for iPhone Duo — the grid straddles the fold",
     "should_trigger": true
   },
   {
@@ -101,6 +101,14 @@
   },
   {
     "query": "my iPad app needs a dual-screen mode that mirrors to an external display via UIScene",
+    "should_trigger": false
+  },
+  {
+    "query": "what screenshot sizes does the App Store want for iPhone Duo, and when does it become mandatory?",
+    "should_trigger": true
+  },
+  {
+    "query": "what are the App Store screenshot sizes for the iPad Pro 13-inch?",
     "should_trigger": false
   }
 ]

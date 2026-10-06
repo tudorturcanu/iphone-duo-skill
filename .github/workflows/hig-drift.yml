@@ -1,7 +1,8 @@
 name: HIG drift
 
 # Apple's "Designing for iPhone Duo" article and the iOS 27.1 beta APIs are new and will change. These jobs fail
-# when they do, so references/ and SKILL.md get re-checked. Only a hash and availability metadata are stored,
+# when they do, so references/ and SKILL.md get re-checked. The launch sources (news post, App Store Connect
+# specs, Xcode status) are compared by a few facts. Only hashes, numbers, and availability metadata are stored,
 # never Apple's text.
 
 on:
@@ -36,3 +37,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Every Apple API the skill names still exists with the same availability
         run: python3 tests/check_apple_apis.py
+
+  sources:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Launch news, App Store specs, and Xcode status still match references/shipping.md
+        run: python3 tests/check_apple_sources.py
