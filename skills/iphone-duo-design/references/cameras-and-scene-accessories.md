@@ -83,6 +83,11 @@ registration = registerSceneAccessory(accessory)   // UISceneAccessoryRegistrati
   navigating to a view that registers its own makes the previous one unavailable until you go back.
 - Accessory scenes have no manifest entry; identify one by the session role `windowCameraCaptureAccessory`.
 - Keep interaction minimal (a tap to focus suits it); the display accepts touch, but it isn't a second interface.
+- Because the system can withdraw the content at any moment (device closes, app leaves the foreground, capture ends),
+  make animations able to start, pause, and stop cleanly. For custom timing use `TimelineView` or `CADisplayLink`,
+  as on any display (Apple DTS).
+- Apps that don't capture can't draw on the outer display while the device is open: a scene accessory (or AlarmKit,
+  see [system behaviors](system-behaviors.md)) is the only way in.
 
 ## 4. Other multi-display and multi-window notes (talk 111464)
 

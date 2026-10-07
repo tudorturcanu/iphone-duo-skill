@@ -2,6 +2,53 @@
 
 All notable changes to this skill are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.3.1] - 2026-10-07
+
+Prompted by Apple's [Three steps to make your app shine on iPhone Duo](https://developer.apple.com/iphone-duo/prepare/)
+page and [Hello Developer: October 2026](https://developer.apple.com/news/?id=gv788oj6) (2026-10-06).
+
+### Added
+- Audit: three detections from Apple's list of resize patterns. Comparisons with known iPhone sizes
+  (`bounds.height == 844`), `statusBarOrientation` and any `.interfaceOrientation` read (including
+  `effectiveGeometry.interfaceOrientation`), and an advisory category for aspect-fill media that may crop on the
+  wider displays (`.scaleAspectFill`, `contentMode: .fill`, `.scaledToFill()`). Aspect fill is usually correct, so
+  advisory matches are listed with a `◦` and never change the exit code (CI tests this). 7 new marked fixture lines
+  and look-alike clean lines.
+- `references/system-behaviors.md`, from Apple's written highlights of the iPhone Duo Group Labs: several windows of
+  one app (inner display only), state across folds, Picture in Picture, Core Motion with `deviceMotionBody`, AlarmKit
+  and the outer display, Live Activities and widget families, `UITabAccessory`, experimental web APIs, and
+  accessibility. Its 7 API names join the weekly check (64 in all); the Core Motion sample typechecks against the
+  iOS 27.0 SDK. The main reference gains three points from the same source: touches in a reserved region may not
+  register, `toolbarVerticalEdge` is the signal for vertical bars, and hinge update rate is system policy.
+- What each SDK gets on iPhone Duo (iOS 26: centered with empty space; 27.0: most of the inner display; 27.1: full
+  display with side bars), in `SKILL.md` and as a table in the reference.
+- Testing without the iPhone Duo simulator: the resizable simulator in Device Hub and iPhone Mirroring on macOS 27
+  replace the old "approximate with iPad Split View" advice.
+- Reference §5: re-read sizes on every change (`viewWillTransition(to:with:)`, `UIWindow(windowScene:)`), regular
+  width no longer means iPad, full-bleed media, and how Apple's app resizability skill in Xcode 27.1
+  (`xcrun agent skills export`) relates to this one. The README says the same.
+- `shipping.md`: what "optimized" means (iOS 27.1 SDK), featuring nominations, the creative assets specifications
+  and Asset Library, Group Labs on October 13 and 15. It marks the product page badge reported by the press as not
+  confirmed: Apple's post and the pages it links don't mention one.
+- `tests/check_hig.py`: the HIG drift check now stores one hash per section, so a change report names the sections
+  to re-read. `tests/check_apple_sources.py` also checks six facts on the "Three steps" page.
+- Eval 7: an app built with an older SDK, and testing without the Duo simulator.
+
+### Changed
+- Benchmark (fourth round, all 7 evals, one run each, no web access on either side): 58/59 expectations with the
+  skill vs 28/59 without (98% vs 47%). Eval 7 scored 6/6 vs 3/6, eval 6 6/6 vs 2/6.
+- Tabletop rule: the one miss with the skill put a timer readout below the fold, because the rule said only
+  "content on top". It now says what counts: what's read from afar (text, video, a timer readout).
+- Evals: seven expectations that an answer with no iPhone Duo knowledge could pass are reworded ("nothing invented"
+  now requires a Duo API to be used; preview sizes must be given for iPhone Duo; "check Apple's pages" must be about
+  the April 2027 requirement). They apply from the next round.
+- HIG article: its hash changed again between 2026-10-06 and 2026-10-07 with no change-log entry. Re-read in full;
+  every point the reference summarizes still matches. With only a whole-article hash stored, what changed couldn't
+  be identified, which is why the check is now per section.
+- Xcode 27.1 is still a release candidate (27A9275) and the 57 APIs recorded before this release are unchanged,
+  the iOS 27.1 ones still marked beta (2026-10-07).
+- README counts corrected (28 trigger queries, 7 evals).
+
 ## [1.3.0] - 2026-10-06
 
 Prompted by Apple's news post [Prepare and submit your apps for iPhone Duo](https://developer.apple.com/news/?id=kkphp5qo)

@@ -22,6 +22,9 @@ This skill equips coding assistants to:
 4. **Follow Apple Human Interface Guidelines (HIG)** for device poses (flat, book-style, standing) without designing fragmented "per-pose" code branches.
 5. **Get the app into the store**: iPhone Duo screenshot and app preview sizes, and the April 2027 screenshot requirement, when you ask about submission.
 6. **Handle cameras and the outer display**: the virtual front camera, `AVCaptureDeviceDirectionCoordinator`, and camera capture scene accessories, when the app captures photos or video.
+7. **Answer questions beyond layout**: several windows of one app, Picture in Picture, Core Motion on two displays, Live Activities and widgets, web content, and accessibility, from Apple's Group Labs answers.
+
+**How it relates to Apple's own skill.** Xcode 27.1's coding assistant ships an app resizability skill (ask it to "get my app ready for iPhone Duo", or export it for other agents with `xcrun agent skills export`). According to Apple's [Three steps](https://developer.apple.com/iphone-duo/prepare/) page, it scans for resize patterns: main-screen sizing, orientation and idiom checks, device-size comparisons, full-bleed media. This skill's audit covers those patterns too and adds what comes after resizing: side bars and overflow, the fold and reserved regions, arrangement views, cameras, and App Store assets. Use both.
 
 ---
 
@@ -72,15 +75,16 @@ bash $S path/to/ios/project -q       # up to 5 matches per category, hide clean 
 bash $S path/to/ios/project -n 0     # every match
 ```
 
-It flags 20 categories of anti-pattern, grouped as:
+It flags 20 categories of anti-pattern and one advisory category, grouped as:
 
 | Group | Examples |
 |---|---|
 | Launch & resizing | a UIKit app delegate with no UIScene life cycle (won't launch with the iOS 27 SDK), `UIRequiresFullScreen` in `Info.plist` or build settings |
-| Display-specific sizing | any `UIScreen.main`, `screen.bounds` / `nativeBounds`, hard-coded iPhone dimensions, fixed frames ≥ 300 pt, `userInterfaceIdiom` and device-model checks, `UIDevice.current.orientation` layout branches |
+| Display-specific sizing | any `UIScreen.main`, `screen.bounds` / `nativeBounds`, hard-coded iPhone dimensions (including `bounds.height == 844` comparisons), fixed frames ≥ 300 pt, `userInterfaceIdiom` and device-model checks, layout branches on `UIDevice.current.orientation`, `statusBarOrientation`, or `interfaceOrientation` |
 | Safe areas & reserved regions | blanket `.ignoresSafeArea()` / `(.container, edges: .all)`, `insets.left * 2` math, hard-coded status bar and home indicator insets |
 | Bars & overflow | custom `UIToolbar` / `UITabBar` / `UINavigationBar` and homemade tab bars, `.fixedSpace`, `Spacer()` between toolbar items, several controls in one `ToolbarItem`, symbol-only items (SwiftUI and UIKit), custom `ellipsis` menus, hidden system tab bars, disabled side bars, deprecated `NavigationView` |
 | The fold | odd column counts in `GridItem` arrays and compositional layouts, orientation locks |
+| Wider displays (advisory) | aspect-fill media (`.scaleAspectFill`, `contentMode: .fill`, `.scaledToFill()`) that may crop important content. Aspect fill is usually correct (thumbnails), so these are listed with a `◦` and never change the exit code |
 
 Every hit is a candidate, not a verdict. The agent reads each one in context before changing it.
 
@@ -88,15 +92,15 @@ Every hit is a candidate, not a verdict. The agent reads each one in context bef
 
 ## 🧪 Testing & Evals
 
-Five benchmark prompts live in `tests/evals/evals.json`, in the [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) format. Each has pass/fail `expectations` to grade against. `files` paths are relative to the repository root, not the skill folder. `tests/evals/trigger_evals.json` holds 26 queries (13 should trigger, 13 near misses such as Galaxy Fold, visionOS, or iPad Stage Manager) for tuning the description.
+Seven benchmark prompts live in `tests/evals/evals.json`, in the [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) format. Each has pass/fail `expectations` to grade against. `files` paths are relative to the repository root, not the skill folder. `tests/evals/trigger_evals.json` holds 28 queries (14 should trigger, 14 near misses such as Galaxy Fold, visionOS, or iPad Stage Manager) for tuning the description.
 
-The prompts cover the SwiftUI fixture, the UIKit fixture, a design spec, already-clean code (no over-editing), and the exact fold APIs. When running them, give the agent a copy of the fixture with `//` comment lines stripped (the `Clean` and `Patterns` headers describe the expected answer), and compare against a run without the skill. On the last benchmark (v1.2.1, third round) the skill passed 41 of 42 expectations (97%) against 26 of 42 (61%) without it. The biggest gaps were the design spec (10/10 vs 4/10), the SwiftUI refactor (10/10 vs 6/10), and the no-over-editing review (5/5 vs 2/5).
+The prompts cover the SwiftUI fixture, the UIKit fixture, a design spec, already-clean code (no over-editing), the exact fold APIs, App Store submission, and what an app built with an older SDK looks like and how to test without the Duo simulator. When running them, give the agent a copy of the fixture with `//` comment lines stripped (the `Clean` and `Patterns` headers describe the expected answer), and compare against a run without the skill. On the last benchmark (v1.3.1, fourth round, one run per prompt, no web access on either side) the skill passed 58 of 59 expectations (98%) against 28 of 59 (47%) without it. The biggest gaps were the fold API question (9/9 vs 2/9), App Store submission (6/6 vs 2/6), and the design spec (10/11 vs 5/11). Runs with the skill used about 29k more tokens and took about 40 seconds longer on average. Seven expectations that an answer with no iPhone Duo knowledge could pass were reworded after this round, so the next baseline will score lower.
 
 CI validates the `SKILL.md` frontmatter (name, description length, `allowed-tools` syntax, version matching `CHANGELOG.md`) and the eval files, runs `shellcheck` on the audit script, and guards the script's accuracy in both directions, with `rg` and with `grep`:
 - every line marked `// duo-bad` in `tests/fixtures/Patterns/` must be flagged, and nothing else;
 - `tests/fixtures/Clean/` (correct code that looks similar) must report nothing.
 
-A weekly job (`hig-drift.yml`) fails when Apple changes the HIG article, so the reference gets re-checked. A third check (`tests/check_apple_sources.py`) compares a few facts from the launch news post, the App Store Connect screenshot and preview specs, and the Xcode 27.1 release notes, and flags new iPhone Duo news posts. It stores only a hash of the article, never Apple's text. The same job checks the 39 Apple APIs the skill names (`tests/apple-apis.tsv`) against Apple's docs and fails when one disappears or its availability changes, for example when the iOS 27.1 APIs leave beta. After reviewing a change, run `python3 tests/check_apple_apis.py --update`. Tip: Apple serves HIG and API pages as Markdown at `developer.apple.com/tutorials/data/<path>.md`, which is how the API names in `references/` were verified.
+A weekly job (`hig-drift.yml`) fails when Apple changes the HIG article, so the reference gets re-checked. `tests/check_hig.py` keeps one hash per section of the article, so the report names the sections that changed (after reviewing, run `python3 tests/check_hig.py --update`). A third check (`tests/check_apple_sources.py`) compares a few facts from the launch news post, the App Store Connect screenshot and preview specs, the Xcode 27.1 release notes, and Apple's "Three steps" page, and flags new iPhone Duo news posts. Only hashes and section headings are stored, never Apple's text. The same job checks the 64 Apple APIs the skill names (`tests/apple-apis.tsv`) against Apple's docs and fails when one disappears or its availability changes, for example when the iOS 27.1 APIs leave beta. After reviewing a change, run `python3 tests/check_apple_apis.py --update`. Tip: Apple serves HIG and API pages as Markdown at `developer.apple.com/tutorials/data/<path>.md`, which is how the API names in `references/` were verified.
 
 Only `skills/iphone-duo-design/` is installed. Tests and CI stay in the repo.
 
@@ -108,12 +112,15 @@ Only `skills/iphone-duo-design/` is installed. Tests and CI stay in the repo.
 │   └── references/
 │       ├── apple-hig-designing-for-iphone-duo.md # Condensed HIG + developer guidance + API reference
 │       ├── cameras-and-scene-accessories.md      # Camera direction, virtual front camera, outer-display accessories
-│       └── shipping.md                           # Launch dates, App Store screenshot and preview specs
+│       ├── shipping.md                           # Launch dates, App Store screenshot and preview specs
+│       └── system-behaviors.md                   # Windows, Picture in Picture, Core Motion, widgets, web, accessibility
 ├── tests/
 │   ├── evals/evals.json                  # Benchmark evals with graded expectations
 │   ├── evals/trigger_evals.json          # Should / shouldn't trigger queries
 │   ├── apple-apis.tsv                    # Apple APIs the skill names + recorded availability
 │   ├── check_apple_apis.py               # Weekly check of those APIs against Apple's docs
+│   ├── check_hig.py                      # Weekly check of the HIG article, one hash per section
+│   ├── hig-duo.sha256                    # Those hashes (no Apple text)
 │   ├── check_apple_sources.py            # Weekly check of launch news, App Store specs, Xcode status
 │   └── fixtures/
 │       ├── NotesApp/                     # SwiftUI tab bar, grid & toolbar anti-patterns
@@ -122,7 +129,7 @@ Only `skills/iphone-duo-design/` is installed. Tests and CI stay in the repo.
 │       └── Clean/                        # Correct look-alike code; must report nothing
 ├── .github/workflows/
 │   ├── ci.yml                            # shellcheck + audit accuracy and output-size tests
-│   └── hig-drift.yml                     # Weekly: HIG hash, API availability, launch sources
+│   └── hig-drift.yml                     # Weekly: HIG section hashes, API availability, launch sources
 ├── SECURITY.md
 └── CHANGELOG.md
 ```

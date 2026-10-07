@@ -18,7 +18,7 @@
         "Every icon toolbar button has both a title and a symbol (Label or Button(_:systemImage:))",
         "No .ignoresSafeArea() on scrolling or interactive content and no hard-coded .padding(.top, 59)",
         "Uses at least one iPhone Duo bar API correctly (visibilityPriority on toolbar content, ToolbarOverflowMenu, axisBehavior, or toolbarVerticalCompressionBehavior)",
-        "Every Duo-specific API used exists in the skill's reference §6; nothing invented",
+        "Uses Duo-specific APIs, and every one used exists in the skill's reference §6; nothing invented (a solution with no Duo-specific API does not pass)",
         "The summary says what could not be verified (no build, no iPhone Duo simulator) and mentions building with the iOS 27.1 SDK",
         "Any iOS 27.1-only API is behind #available (or the summary states the deployment-target requirement)"
       ]
@@ -39,7 +39,7 @@
         "The three ellipsis-menu actions (Select, Add to Album, Slideshow) are all reachable through navigationItem.additionalOverflowItems; the ellipsis button is gone",
         "Every icon UIBarButtonItem has both a title and an image",
         "Does not add features the user didn't ask for (new actions, data sources, cell classes beyond what the refactor needs)",
-        "Every Duo-specific API used exists in the skill's reference §6; nothing invented",
+        "Uses Duo-specific APIs, and every one used exists in the skill's reference §6; nothing invented (a solution with no Duo-specific API does not pass)",
         "The explanation says what was verified and what was not",
         "The explanation places bars correctly: on the side on the outer display and inner landscape, horizontal in inner portrait"
       ]
@@ -93,8 +93,8 @@
         "States that only active regions are returned by default (the fold is active only while partially folded)",
         "Mentions options: .includeInactive for planning while the device is flat",
         "Wraps new APIs in if #available(iOS 27.1, *) or states the iOS 27.1 requirement",
-        "Uses no API names outside the skill's reference and standard UIKit",
-        "In tabletop (horizontal fold) the palettes go to the lower half; claims that layout reruns on fold are tested or hedged, not asserted"
+        "Names the real fold APIs, and uses no API names outside the skill's reference and standard UIKit (an answer that names no fold API does not pass)",
+        "Handles the horizontal fold explicitly (tabletop: palettes go to the lower half, controls below content); claims that layout reruns on fold are tested or hedged, not asserted"
       ]
     },
     {
@@ -105,10 +105,24 @@
       "expectations": [
         "States that iPhone Duo screenshots are required for submissions starting April 2027 (and that submitting optimized apps is possible now)",
         "Gives the screenshot sizes: outer 1398 x 2034 (or 2034 x 1398) and inner 2007 x 2853 (or 2853 x 2007)",
-        "Mentions app previews at 886 x 1920 or 1920 x 886, 15 to 30 seconds",
+        "Gives the app preview size for iPhone Duo as 886 x 1920 or 1920 x 886, 15 to 30 seconds (the same numbers attributed only to other iPhones do not pass)",
         "States that iPhone Duo is available October 23, 2026 and that builds need Xcode 27.1",
         "Says the screenshots should show the adapted layouts (outer compact, inner regular) rather than scaled iPhone screenshots, or mentions the App Store Connect preview tool",
-        "Flags that the screenshot specifications page doesn't yet list the April 2027 requirement (or tells the user to re-check Apple's pages) instead of presenting everything as settled"
+        "Flags that the screenshot specifications page doesn't yet list the April 2027 requirement, or tells the user to re-check Apple's pages for that requirement specifically (a general \"I don't know, check Apple\" does not pass)"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "our app is still built with Xcode 26 and we won't be able to move to Xcode 27.1 before iPhone Duo ships. what will it look like on the device? and one of our devs only has Xcode 27.0, no Duo simulator: is there any way for them to test the resizing work in the meantime?",
+      "expected_output": "Explains the three SDK tiers (iOS 26 SDK: centered on the inner display with empty space, beside the status bar and camera when closed; 27.0: fills most of the inner display but avoids the status-bar edge, no side bars; 27.1: full display with side bars); says the app still runs; suggests the resizable simulator in Device Hub or iPhone Mirroring on macOS 27 for resize testing while stating their limits; no invented settings or APIs.",
+      "files": [],
+      "expectations": [
+        "Says the app still runs on iPhone Duo when built with the iOS 26 SDK, but appears centered on the inner display with empty space around it (not full screen), and beside the status bar and camera on the outer display",
+        "Distinguishes the iOS 27.0 SDK (fills most of the inner display, still avoids the status-bar edge, no side bars) from the iOS 27.1 SDK (full display, toolbars and tab bars on the side)",
+        "Suggests the resizable iOS simulator in Device Hub and/or iPhone Mirroring on macOS 27 as ways to test resizing without the iPhone Duo simulator",
+        "States that the resizable simulator and iPhone Mirroring don't replace the iPhone Duo simulator (Xcode 27.1) for side bars, the fold, or poses (naming at least one of the two substitutes)",
+        "Does not invent an Info.plist key, build setting, or API that makes an older-SDK build fill the display",
+        "Recommends resize work that pays off on any SDK (size from the view or scene instead of UIScreen.main, no orientation, idiom, or device-size checks)"
       ]
     }
   ]

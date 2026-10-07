@@ -88,6 +88,19 @@ jobs:
             echo "$tool: $(echo "$expected" | wc -l) marked lines caught, clean fixture clean"
           done
 
+      - name: Advisory categories are listed but don't fail the audit
+        run: |
+          S=skills/iphone-duo-design/scripts/audit_duo_readiness.sh
+          d=$(mktemp -d)
+          printf 'thumbnail.contentMode = .scaleAspectFill\n' > "$d/Cell.swift"
+          for tool in rg grep; do
+            [ "$tool" = grep ] && export AUDIT_NO_RG=1
+            set +e; out=$(bash "$S" "$d" -q); code=$?; set -e
+            echo "$out"
+            [ "$code" -eq 0 ] || { echo "$tool: advisory match changed the exit code to $code"; exit 1; }
+            echo "$out" | grep -q '^◦ Advisory: .*(1)' || { echo "$tool: advisory match not listed"; exit 1; }
+          done
+
       - name: Audit output stays small on a large tree
         run: |
           S=skills/iphone-duo-design/scripts/audit_duo_readiness.sh

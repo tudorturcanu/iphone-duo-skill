@@ -56,3 +56,10 @@ uikit/uisceneaccessoryregistration/isavailable	27.0	-	-
 uikit/uisceneaccessoryregistration/isenabled	27.0	-	-
 uikit/uiviewcontroller/registersceneaccessory(_:)	27.0	-	-
 uikit/uiviewcontroller/unregistersceneaccessory(_:)	27.0	-	-
+coremotion/cmbodyidentifiable	27.0	-	-
+coremotion/cmmotionmanager/devicemotionbody	27.0	-	-
+uikit/uitabaccessory	26.0	-	-
+uikit/uitabaccessory/environment	26.0	-	-
+uikit/uitabbarcontroller/bottomaccessory	26.0	-	-
+widgetkit/widgetfamily/systemextralargeportrait	27.0	-	-
+uikit/uiscenedelegate/staterestorationactivity(for:)	13.0	-	-

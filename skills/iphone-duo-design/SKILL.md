@@ -2,9 +2,9 @@
 name: iphone-duo-design
 description: Adapts, builds, and reviews SwiftUI and UIKit apps for iPhone Duo, Apple's dual-display hinged iPhone (the folding, book-style iPhone with an outer and inner display). Use whenever the user mentions iPhone Duo, a foldable or dual-screen iPhone, the hinge or fold, half-folded, book or tabletop poses, reserved regions, arrangement views, side or vertical toolbars and tab bars on iPhone, or wants an iOS app audited, fixed, specced, or prepared for App Store submission (screenshots, previews) for iPhone Duo, or has a camera app that must follow which way each display's camera faces. Not for Android foldables (Galaxy Z Fold or Flip), Surface Duo, visionOS, external displays, or general iPad multitasking.
 license: MIT
-compatibility: Needs bash; ripgrep optional (falls back to grep). Verifying on a simulator needs Xcode 27.1 (RC on 2026-10-06; the 27.2 beta lacks the Duo SDK). No network.
+compatibility: Needs bash; ripgrep optional (falls back to grep). Verifying on a simulator needs Xcode 27.1 (RC on 2026-10-07; the 27.2 beta lacks the Duo SDK). No network.
 metadata:
-  version: "1.3.0"
+  version: "1.3.1"
   author: tudorturcanu
 allowed-tools: Read Grep Glob Bash(bash ${CLAUDE_SKILL_DIR}/scripts/audit_duo_readiness.sh *) Bash(xcrun simctl list devicetypes*)
 ---
@@ -15,8 +15,7 @@ iPhone Duo is still an iPhone; all iOS guidance applies. New: two displays, a hi
 reserved regions, and bars that move to the side. Make the app **adapt**. Don't build a "Duo mode."
 
 No installs or network; the audit script is read-only. `<skill-dir>` is this file's folder (`${CLAUDE_SKILL_DIR}` in
-Claude Code). For API signatures, rationale, and doc links, read
-[the reference](references/apple-hig-designing-for-iphone-duo.md) when a rule isn't enough.
+Claude Code). When a rule isn't enough: [the reference](references/apple-hig-designing-for-iphone-duo.md) (signatures, rationale, links).
 
 ## Mental model
 
@@ -30,7 +29,8 @@ Claude Code). For API signatures, rationale, and doc links, read
 
 Don't design per pose: a compact plus a regular layout, built on size classes, covers all of them. Reserved regions:
 outer camera (always; grows into the Dynamic Island), inner camera (while active), fold (while partially folded).
-Build with the iOS 27.1 SDK: older builds get no side bars and sit beside the status bar and camera.
+Build with the iOS 27.1 SDK: 27.0 builds get no side bars and stop short of the status-bar edge, and iOS 26 builds
+sit centered on the inner display with empty space around them (closed: beside the status bar and camera).
 
 ## Workflow
 
@@ -45,17 +45,17 @@ Build with the iOS 27.1 SDK: older builds get no side bars and sit beside the st
    files (`xcrun --sdk iphonesimulator swiftc -typecheck`); iOS 27.1 APIs need that SDK. Then walk the checklist
    on the iPhone Duo simulator (`xcrun simctl list devicetypes | grep -i duo`; poses from Device Hub; a black
    screenshot means the other display: `simctl io <device> enumerate`, then `screenshot --display=`). Widgets, Live
-   Activities, and most extensions don't run there. No simulator: say so; approximate with iPad Split View.
+   Activities, and most extensions don't run there. No Duo simulator: say so; resize in Device Hub or iPhone Mirroring.
 4. **Report** what changed, what you verified, and what you couldn't.
 5. **Only if asked:** App Store assets and the April 2027 screenshot requirement: [shipping](references/shipping.md);
-   camera apps and outer-display content: [cameras](references/cameras-and-scene-accessories.md).
+   camera apps and outer-display content: [cameras](references/cameras-and-scene-accessories.md); several windows, Picture in Picture, Core Motion, widgets, web, accessibility: [system behaviors](references/system-behaviors.md).
 
 Scope: change only the app code the user asked about; fix what breaks. Move actions, never drop them, and don't add
 features or data sources nobody asked for. React Native / Flutter bars drawn in JS or Dart never move to the side.
 **Design specs** (no code): describe what people see in each pose in plain words, keep it short, and put API names
 in a brief "Implementation notes" section at the end.
 
-> **APIs** (checked against Apple's docs, 2026-10-06). Every API named in this file exists. Fold, arrangement, hinge,
+> **APIs** (checked against Apple's docs, 2026-10-07). Every API named in this file exists. Fold, arrangement, hinge,
 > and vertical-bar APIs are **iOS 27.1** (still marked beta in the docs); `visibilityPriority`,
 > `ToolbarOverflowMenu`, `.topBarPinnedTrailing` are 27.0. Guard with `#available` below the deployment target. Signatures are in the reference; anything named in
 > neither: don't guess, leave a marked `TODO`.
@@ -66,6 +66,7 @@ in a brief "Implementation notes" section at the end.
 - Size from size classes, layout margins, and safe-area insets. No `UIScreen.main` (deprecated; its bounds keep the outer size after unfolding;
   use the view's bounds, `window?.windowScene?.screen`, `traitCollection.displayScale`), fixed device sizes,
   `userInterfaceIdiom` or orientation branches, or magic status-bar / Dynamic Island padding.
+- Regular width no longer means iPad. Aspect-fill media crops more here: pick fill or fit from the aspect ratio.
 - Insets differ per side: use `bounds.inset(by: safeAreaInsets)`, never `width - insets.left * 2`. Ignore safe
   areas only on specific edges, and only for backgrounds, never scrolling or interactive content.
 - `UIRequiresFullScreen` is honored but the app still resizes on open/close, so it saves no work; plan to drop it.
@@ -80,7 +81,7 @@ in a brief "Implementation notes" section at the end.
 **The fold**
 - Prefer self-adapting containers; standard split views balance panes when folded.
 - Custom views: read `reservedRegions(kind: .division)` (fold) and `.occlusion` (cameras) and keep text and tap
-  targets out of each region's `frame`, which is in the queried view's coordinates. No change callback is
+  targets out of each region's `frame` (in the queried view's coordinates; touches there may not register). No change callback is
   documented, so read them where layout happens (`layoutSubviews`, `viewDidLayoutSubviews`, `GeometryReader`,
   `onGeometryChange`). Flat → half-folded may not resize the view, so don't claim layout reruns: test it, and if it
   doesn't, call `setNeedsLayout()` from a `UIHingeInteraction`. Flat, the fold is inactive with zero width. Only active regions return by default; `options: .includeInactive`
@@ -89,7 +90,7 @@ in a brief "Implementation notes" section at the end.
   alone can be odd. Scrolling grids needn't avoid the fold (Apple DTS); adjust only non-scrolling sections around it.
 - On fold, move the smallest meaningful group, and move related elements together. Don't rearrange.
   Scrolling content (lists, feeds, articles) doesn't need to avoid the fold.
-- Tabletop (laptop pose, horizontal fold) layouts are optional: content on top, controls below. Hinge angle is for interactions only.
+- Tabletop (laptop pose, horizontal fold) layouts are optional: what's read from afar on top (text, video, a timer readout), controls below. Hinge angle is for interactions only.
 
 **Arrangement views**
 - Primary + secondary container. *Split*: side by side when wide, stacked when tall, adjusted around the fold

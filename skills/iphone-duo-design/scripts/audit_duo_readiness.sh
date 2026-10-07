@@ -9,6 +9,7 @@
 #   -n N          Matches shown per category (default 5, 0 = all)
 #
 # Exit codes: 0 = clean, 1 = anti-patterns found, 2 = bad arguments, nothing to scan, or search error
+# Categories titled "Advisory: ..." are common in correct code: they're listed (◦) but never change the exit code.
 # AUDIT_NO_RG=1 forces the grep fallback.
 #
 # Every match is a candidate. Read the surrounding code before changing it.
@@ -40,6 +41,7 @@ if [ ! -d "$TARGET_DIR" ]; then
 fi
 
 N='([^0-9.]|$)'   # end of a number
+SIZES='(390|844|375|812|414|896|428|926|430|932|393|852|402|874)'   # point sizes of earlier iPhones
 GRID='GridItem\(([^()]|\([^()]*\))*\)'
 
 # title | regex | fix. One row per category, most severe first. Regexes are POSIX ERE.
@@ -48,10 +50,10 @@ CHECKS=(
     "App opts out of resizing|\[UIRequiresFullScreen\]$|Honored, but the app still resizes on open/close and in Split View. Drop it and make the layout resize."
     "App not on the UIScene life cycle|\[no UIScene life cycle\]$|Built with the iOS 27 SDK, it won't launch. Add a UIApplicationSceneManifest and a scene delegate (TN3187)."
     "Screen bounds or main screen used|(UIScreen\.main([^A-Za-z]|$)|[Ss]creen\??\.(bounds|nativeBounds))|Size from the view or scene; use traitCollection.displayScale. UIScreen.main is ambiguous with two displays."
-    "Hard-coded iPhone dimensions|CG(Rect|Size)\(.*[^0-9.](390|844|375|812|414|896|428|926|430|932|393|852|402|874)$N|Use Auto Layout or safe areas."
+    "Hard-coded iPhone dimensions|(CG(Rect|Size)\(.*[^0-9.]$SIZES$N|(width|height)[[:space:]]*(==|!=|[<>]=?)[[:space:]]*$SIZES(\.0+)?$N)|No known iPhone size matches iPhone Duo. Use Auto Layout, safe areas, and the space you have."
     "Large fixed frame (>= 300 pt)|\.frame\([^)]*(^|[^A-Za-z])(width|height|minWidth|minHeight):[[:space:]]*([3-9][0-9]{2}|[1-9][0-9]{3,})$N|Let containers size from available space; maxWidth caps are fine."
     "Device idiom or model checks used for layout|(userInterfaceIdiom[[:space:]]*==[[:space:]]*\.(phone|pad)|utsname|\"iPhone[0-9]+,[0-9]+\")|Branch on size class; the inner display is regular width."
-    "Device orientation used for layout|(UIDevice\.current\.orientation|interfaceOrientation\.is(Landscape|Portrait))|Poses and the fold don't map to orientation. Use size classes and available size."
+    "Device orientation used for layout|(UIDevice\.current\.orientation|statusBarOrientation|interfaceOrientation\.is(Landscape|Portrait)|[.]interfaceOrientation([^A-Za-z]|$))|Orientation doesn't tell you the app's shape. Compare the width and height of the space you have, or use size classes."
     "Symmetric safe-area assumption|safeAreaInsets\.(left|right|top|bottom)[[:space:]]*\*[[:space:]]*2|Insets differ per side (side bars, cameras). Use bounds.inset(by: safeAreaInsets)."
     "Blanket safe-area ignoring|\.(ignoresSafeArea|edgesIgnoringSafeArea)\(((\.all|\.container)?|((\.all|\.container),[[:space:]]*)?edges:[[:space:]]*\.all)\)|Ignore specific edges, and only for backgrounds."
     "Hard-coded status bar / home indicator insets|(\.padding\(\.(top|vertical),[[:space:]]*(44|47|59)\)|\.padding\(\.bottom,[[:space:]]*34\)|top:[[:space:]]*(47|59)$N|(statusBar|notch|safeArea|topInset|bottomInset)[A-Za-z]*[[:space:]]*[:=][[:space:]]*(20|34|44|47|59)$N)|Use safeAreaInsets."
@@ -65,10 +67,11 @@ CHECKS=(
     "Deprecated NavigationView|(^|[^A-Za-z])NavigationView[[:space:]]*\{|Use NavigationSplitView or NavigationStack."
     "Odd fixed grid column counts|((repeating:[[:space:]]*(GridItem|\.init)[^,]*,|NSCollectionLayoutGroup.*)[[:space:]]*count:[[:space:]]*[3579]$N|\[[[:space:]]*(${GRID}[[:space:]]*,[[:space:]]*){2}(${GRID}[[:space:]]*,[[:space:]]*){0,2}${GRID}[[:space:]]*,?[[:space:]]*\])|Use an even count or adaptive columns."
     "Orientation lock (games must fill every pose)|supportedInterfaceOrientations|Fill the screen in every pose; no bare letterboxing."
+    "Advisory: aspect-fill media (check cropping)|([.]scaleAspectFill|contentMode:[[:space:]]*[.]fill|[.]scaledToFill\(\))|Wider displays crop more. Choose fill or fit from the aspect ratio or size class, or set a focal point."
 )
 
-SWIFT=$(mktemp); EXTRA=$(mktemp); ALL_MATCHES=$(mktemp); CAT=$(mktemp); LIST=$(mktemp); FILES=$(mktemp)
-trap 'rm -f "$SWIFT" "$EXTRA" "$ALL_MATCHES" "$CAT" "$LIST" "$FILES"' EXIT
+SWIFT=$(mktemp); EXTRA=$(mktemp); ALL_MATCHES=$(mktemp); CAT=$(mktemp); LIST=$(mktemp); FILES=$(mktemp); FLAGGED=$(mktemp)
+trap 'rm -f "$SWIFT" "$EXTRA" "$ALL_MATCHES" "$CAT" "$LIST" "$FILES" "$FLAGGED"' EXIT
 
 ALL=()
 for c in "${CHECKS[@]}"; do
@@ -100,7 +103,8 @@ search_swift() {
              -e creen -e CGRect -e CGSize -e '.frame(' -e userInterfaceIdiom -e utsname -e '"iPhone' -e rientation \
              -e SafeArea -e safeArea -e statusBar -e notch -e Inset -e padding -e 'top:' \
              -e fixedSpace -e flexibleSpace -e 'Spacer()' -e ellipsis -e tabBar -e TabBar -e 'UIBarButtonItem(image:' \
-             -e NavigationView -e 'count:' -e GridItem -e oolbar -e Bar -e elected -e urrent -e ctive . \
+             -e NavigationView -e 'count:' -e GridItem -e oolbar -e Bar -e elected -e urrent -e ctive \
+             -e idth -e eight -e AspectFill -e contentMode -e scaledToFill . \
             | grep -E -- "$COMBINED|Spacer\(\)|[.]toolbar|ToolbarItem"
     fi
 }
@@ -196,6 +200,7 @@ fi
 echo "iPhone Duo readiness audit: $TARGET_DIR"
 
 ISSUES_FOUND=0
+ADVISORY_LINES=0
 
 for c in "${CHECKS[@]}"; do
     title="${c%%|*}"; rest="${c#*|}"; regex="${rest%|*}"; fix="${rest##*|}"
@@ -204,8 +209,14 @@ for c in "${CHECKS[@]}"; do
     count=$(wc -l < "$CAT" | tr -d ' ')
 
     if [ "$count" -gt 0 ]; then
-        ISSUES_FOUND=$((ISSUES_FOUND + 1))
-        echo "▶ $title ($count) — $fix"
+        if [ "${title#Advisory: }" != "$title" ]; then
+            ADVISORY_LINES=$((ADVISORY_LINES + count))
+            echo "◦ $title ($count) — $fix"
+        else
+            ISSUES_FOUND=$((ISSUES_FOUND + 1))
+            cut -d: -f1,2 "$CAT" >> "$FLAGGED"
+            echo "▶ $title ($count) — $fix"
+        fi
         if [ "$SUMMARY" -eq 0 ]; then
             if [ "$MAX" -eq 0 ] || [ "$count" -le "$MAX" ]; then
                 cut -c1-160 "$CAT" | sed 's/^/    /'
@@ -220,9 +231,13 @@ for c in "${CHECKS[@]}"; do
 done
 
 if [ "$ISSUES_FOUND" -gt 0 ]; then
-    lines=$(cut -d: -f1,2 "$ALL_MATCHES" | uniq | wc -l | tr -d ' ')
+    lines=$(sort -u "$FLAGGED" | wc -l | tr -d ' ')
     echo "$lines line(s) flagged in $ISSUES_FOUND categor$( [ "$ISSUES_FOUND" -eq 1 ] && echo y || echo ies ). Review each in context."
     exit 1
+fi
+if [ "$ADVISORY_LINES" -gt 0 ]; then
+    echo "No common iPhone Duo anti-patterns found ($ADVISORY_LINES advisory line(s) above). Still walk the verification checklist in SKILL.md."
+    exit 0
 fi
 echo "No common iPhone Duo anti-patterns found. Still walk the verification checklist in SKILL.md."
 exit 0

@@ -8,10 +8,13 @@ text or images. Read the sources for exact wording and diagrams:
 
 - HIG article: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
   (Markdown version: https://developer.apple.com/tutorials/data/design/human-interface-guidelines/designing-for-iphone-duo.md).
-  Last checked against the source on 2026-10-06. Its content changed after 2026-09-13 and again by 2026-10-06
-  (tracked by hash in `tests/hig-duo.sha256`) while its change log still lists only September 9; it names the
-  reserved-region, arrangement-view, and compression APIs and now links the screenshot specifications.
+  Last checked against the source on 2026-10-07. Its content changed after 2026-09-13, by 2026-10-06, and again by
+  2026-10-07 (tracked by section hashes in `tests/hig-duo.sha256`) while its change log still lists only
+  September 9. Re-read in full on 2026-10-07: every point summarized here still matches. It names the
+  reserved-region, arrangement-view, and compression APIs and links the screenshot specifications.
 - Developer article: https://developer.apple.com/documentation/technologyoverviews/preparing-your-app-for-iphone-duo
+- Apple's checklist: [Three steps to make your app shine on iPhone Duo](https://developer.apple.com/iphone-duo/prepare/)
+  (SDK tiers, resize patterns to fix, testing tools). Checked 2026-10-07; summarized in §5.
 - Related: [Designing for iOS](https://developer.apple.com/design/human-interface-guidelines/designing-for-ios),
   [Layout](https://developer.apple.com/design/human-interface-guidelines/layout),
   [Split views](https://developer.apple.com/design/human-interface-guidelines/split-views),
@@ -21,9 +24,12 @@ text or images. Read the sources for exact wording and diagrams:
 - Tech Talks (`developer.apple.com/videos/play/tech-talks/<id>`): 111461 *Prepare your app*, 111462 *Raise the bar*,
   111463 *Strike a pose* (adaptive layouts), 111464 *Multiple displays and scenes*, 111465 *Camera*, 111466 *Design for iPhone Duo*.
 - Testing: [Device Hub](https://developer.apple.com/documentation/xcode/device-hub) in Xcode previews poses.
-  The iPhone Duo SDK and simulator ship in Xcode 27.1 (release candidate on 2026-10-06).
+  The iPhone Duo SDK and simulator ship in Xcode 27.1 (release candidate, build 27A9275, on 2026-10-07).
 - Launch: [Prepare and submit your apps for iPhone Duo](https://developer.apple.com/news/?id=kkphp5qo) (2026-10-05),
   hub page [developer.apple.com/iphone-duo](https://developer.apple.com/iphone-duo/) (talks, workshops, forums).
+  Group Labs: [on demand](https://developer.apple.com/videos/play/meet-with-apple/285) and Apple's
+  [written highlights](https://developer.apple.com/forums/thread/847644) (the "Apple DTS" answers cited below;
+  the topics beyond layout are in [system-behaviors.md](system-behaviors.md)).
 
 ## Contents
 
@@ -34,7 +40,8 @@ text or images. Read the sources for exact wording and diagrams:
 5. [Beyond the HIG](#5-beyond-the-hig-developer-article-and-tech-talks): SDK, screens, bars, displacement, scenes, testing
 6. [API reference](#6-api-reference): exact names and signatures
 7. [Code patterns](#7-code-patterns): UIKit bars, fold-aware layout, even-column grids
-8. Separate files: [cameras and scene accessories](cameras-and-scene-accessories.md), [shipping to the App Store](shipping.md)
+8. Separate files: [cameras and scene accessories](cameras-and-scene-accessories.md), [shipping to the App Store](shipping.md),
+   [system behaviors](system-behaviors.md) (several windows, Picture in Picture, Core Motion, widgets, web, accessibility)
 
 ## 1. What the device is
 
@@ -94,6 +101,8 @@ controls). Three of them:
   SwiftUI `ReservedRegion` (from `GeometryProxy.reservedRegions(kind:options:layoutDirectionBehavior:)`),
   UIKit `UIView.ReservedRegion` (from `UIView.reservedRegions(kind:options:)`). Kinds: `.division` (the fold)
   and `.occlusion` (a camera, including the Dynamic Island). See §6.
+- A custom element that overlaps a reserved region such as the camera without using these APIs may not get its
+  touches: they can be suppressed there (Apple DTS). Both sides of the fold take touches at once when half folded.
 
 ### Adapting when the device folds
 
@@ -194,8 +203,19 @@ Rules:
 ## 5. Beyond the HIG: developer article and tech talks
 
 **Build and screens**
-- Build with the latest Xcode (iOS 27.1 SDK). Older builds don't extend under the status bar and camera, and
-  don't get side bars.
+- Build with the latest Xcode (iOS 27.1 SDK). What each SDK gets on iPhone Duo (Apple's "Three steps" page):
+
+  | Built with | Open (inner display) | Closed (outer display) |
+  |---|---|---|
+  | iOS 26 SDK or earlier | centered, empty space around the window | content left of the status bar and camera |
+  | iOS 27.0 SDK | fills most of the display, still avoids the status bar on the right edge | not stated |
+  | iOS 27.1 SDK or later | full display, bars vertical below the status bar: what Apple calls optimized | full display, side bars |
+
+  Before shipping a 27.1 build, check that content adapts to the bars going vertical.
+- Re-read sizes whenever they change, not once at launch or in `viewIsAppearing`: a fold resizes the app mid-session.
+  Lay out in `layoutSubviews` / `viewDidLayoutSubviews` (SwiftUI: `GeometryReader`, `onGeometryChange`); use
+  `viewWillTransition(to:with:)` for work that must run on a size change. Create windows with
+  `UIWindow(windowScene:)`, not `UIWindow(frame: UIScreen.main.bounds)`, and don't store a `UIScreen`.
 - `UIScreen.main` is deprecated since iOS 26.0 and ambiguous on a two-display device (talk 111461 still says
   "will be deprecated"; the API docs list it as deprecated). Use the view or scene bounds,
   `window?.windowScene?.screen`, and `traitCollection.displayScale`.
@@ -203,6 +223,15 @@ Rules:
 - Orientation locks: talk 111461 says both that the inner display doesn't honor supported orientations and that
   locked apps are scaled there. Either way, don't rely on the lock. Don't branch
   layout on `userInterfaceIdiom` or interface orientation. Use size classes with automatic trait tracking.
+- Orientation doesn't give the app's shape. Remove layout logic based on `UIDevice.current.orientation`,
+  `statusBarOrientation`, or `interfaceOrientation` (including `windowScene.effectiveGeometry.interfaceOrientation`);
+  to know whether the app is wider than tall, compare the width and height of the space you have.
+- Size classes don't identify the device: with iPhone Duo and resizable iPhone Mirroring, an iPhone app can get any
+  combination. Code that shows an iPad-only layout at regular width, or assumes iPhone is always compact, now runs
+  that layout on iPhone too, so make sure it works there (Apple: the inner display should look like a natural
+  extension of the iPad layout). Drop comparisons with known iPhone sizes (`bounds.height == 844`); none match.
+- Full-bleed media (`.scaleAspectFill`, `.aspectRatio(contentMode: .fill)`) can lose important content on the wider
+  displays. Choose fill or fit from the size classes or aspect ratio, or set a focal point.
 - Safe-area insets differ per side. Use `bounds.inset(by: safeAreaInsets)`, not `width - insets.left * 2`.
 - Corners: `ConcentricRectangle` (SwiftUI) and `UICornerConfiguration` (UIKit) follow the new screen shapes.
 
@@ -226,7 +255,9 @@ Rules:
   `.disabled`) only for immersive single-purpose UIs such as a calculator, a full-screen player, or a sheet with a
   single button. Treat it as a fixed choice, not something that toggles with view state.
 - Custom views that must adapt to the side bar read `@Environment(\.toolbarVerticalEdge)` (`HorizontalEdge?`) or
-  `traitCollection.verticalBarEdge` (`.leading`, `.trailing`, `.unspecified`).
+  `traitCollection.verticalBarEdge` (`.leading`, `.trailing`, `.unspecified`). It's the direct signal for "are the
+  bars vertical right now", better than size class or orientation (Apple DTS): the outer display stays compact
+  width in both orientations.
 - Hero or background images extend under the side bar with `backgroundExtensionEffect()` / `UIBackgroundExtensionView`.
 - Information-dense apps can show the tab bar as a sidebar on the inner display:
   `TabView { … }.tabViewStyle(.sidebarAdaptable).defaultTabBarPlacement(.sidebar)` (27.0; takes an
@@ -245,7 +276,7 @@ Rules:
   distance, the bottom half suits controls. A tabletop layout is optional and keeps the same controls.
 - Audit centered layouts: they're what the fold cuts through.
 - Hinge state (`onHingeChange` / `UIHingeInteraction`) is for interactions, such as using the hinge angle as an input.
-  Don't drive layout from it.
+  Don't drive layout from it, and don't depend on its update rate or precision: both are system policy (Apple DTS).
 
 **Scenes and state**
 - Built with the SDK after iOS 26, an app that hasn't adopted the UIScene life cycle won't launch (TN3187). SwiftUI
@@ -260,15 +291,24 @@ Rules:
   `TabView` its selected tab), so disabling it for one immersive screen belongs on a full-screen cover or sheet.
 
 **Testing**
-- iPhone Duo SDK and simulator: Xcode 27.1 only (RC on 2026-10-06; the 27.2 beta notes say to use 27.1). Poses come from Device
+- iPhone Duo SDK and simulator: Xcode 27.1 only (RC on 2026-10-07; the 27.2 beta notes say to use 27.1). Poses come from Device
   Hub; Xcode Previews have a "Display" override for the outer display.
+- Without the Duo simulator, Apple lists two ways to test resizing: the resizable iOS simulator in Device Hub, and
+  iPhone Mirroring on macOS 27 (drag the window to extreme sizes both ways). They exercise resizing; don't assume
+  they show side bars, the fold, or the cameras. Apple calls the iPhone Duo simulator the best way to test the
+  full native experience.
+- Xcode 27.1's coding assistant ships Apple's own app resizability skill ("get my app ready for iPhone Duo";
+  `xcrun agent skills export` writes it out for other agents). It scans for the resize patterns above (main screen,
+  orientation, idiom and device-size checks, full-bleed media) and, by Apple's account, doesn't find everything.
+  Use it alongside this skill, which adds the bars, fold, arrangement-view, and camera guidance.
 - Simulator known issues (Xcode 27.1 notes): StandBy unavailable, most app extensions (widgets, Live Activities)
   can't run or be debugged. Verify those on a device.
 - Screenshots: `xcrun simctl io <device> enumerate` lists displays; pass `screenshot --display=<id>` to capture the
   one in use.
 
 **Cameras and scene accessories:** [cameras-and-scene-accessories.md](cameras-and-scene-accessories.md) (tech talks
-111464–111465). **App Store submission:** [shipping.md](shipping.md).
+111464–111465). **App Store submission:** [shipping.md](shipping.md). **Several windows, Picture in Picture, Core
+Motion, widgets, web content, accessibility:** [system-behaviors.md](system-behaviors.md).
 Don't hard-code "Face ID" in UI text; read `LAContext().biometryType`.
 
 ## 6. API reference

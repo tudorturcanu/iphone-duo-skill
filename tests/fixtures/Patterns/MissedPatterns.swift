@@ -93,3 +93,27 @@ final class LegacyBarsViewController: UIViewController {
 }
 
 final class FancyToolbar: UIToolbar {} // duo-bad
+
+final class ResizePatternsViewController: UIViewController {
+    let hero = UIImageView()
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        if view.bounds.height == 844 { useCompactHeader() } // duo-bad
+        if view.bounds.width >= 430.0 { useWideHeader() } // duo-bad
+        let orientation = view.window?.windowScene?.effectiveGeometry.interfaceOrientation // duo-bad
+        let legacy = UIApplication.shared.statusBarOrientation // duo-bad
+        hero.contentMode = .scaleAspectFill // duo-bad
+        _ = (orientation, legacy)
+    }
+
+    func useCompactHeader() {}
+    func useWideHeader() {}
+}
+
+struct HeroView: View {
+    var body: some View {
+        Image("hero").resizable().aspectRatio(contentMode: .fill) // duo-bad
+        Image("cover").resizable().scaledToFill() // duo-bad
+    }
+}

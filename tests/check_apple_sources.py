@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the Apple pages behind references/shipping.md and the launch-status lines in SKILL.md.
+"""Check the Apple pages behind references/shipping.md and the launch-status and SDK lines in SKILL.md.
 
 The facts the skill states about dates, store requirements, asset sizes, and Xcode status come from pages that
 change without notice. This compares a few small facts (numbers and one-word statuses, never Apple's text) with the
@@ -41,7 +41,7 @@ def main():
             problems.append(f"news post kkphp5qo no longer says '{fact}': re-check references/shipping.md and SKILL.md")
 
     # 2. New iPhone Duo news posts since this skill was last updated.
-    known = {"vn8abkxx", "rfb1rooi", "nyuppv9r", "kkphp5qo"}
+    known = {"vn8abkxx", "rfb1rooi", "nyuppv9r", "kkphp5qo", "gv788oj6"}
     for it in ET.fromstring(get(DEV + "news/rss/news.rss")).iter("item"):
         guid = (it.findtext("guid") or "").split("=")[-1]
         body = (it.findtext("title") or "") + html.unescape(it.findtext("description") or "")
@@ -67,6 +67,13 @@ def main():
     meta = json.loads(get(DEV + "tutorials/data/documentation/xcode-release-notes/xcode-27_1-release-notes.json"))["metadata"]
     if "RC" not in meta.get("title", ""):
         problems.append(f"Xcode 27.1 release notes are now titled '{meta.get('title')}': update 'RC' wording in SKILL.md and references/")
+
+    # 5. Apple's "Three steps" page: SDK tiers, Apple's own resizability skill, and the testing tools the skill names.
+    prepare = text(get(DEV + "iphone-duo/prepare/"))
+    for fact in ("iOS 26 SDK", "iOS 27.1 SDK", "xcrun agent skills export", "iPhone Mirroring", "resizable simulator",
+                 "featuring nomination"):
+        if fact not in prepare:
+            problems.append(f"prepare page no longer says '{fact}': re-check SKILL.md, the reference (section 5), and references/shipping.md")
 
     for p in problems:
         print("::warning::" + p)

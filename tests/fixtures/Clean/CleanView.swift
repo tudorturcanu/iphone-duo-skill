@@ -57,10 +57,19 @@ final class CleanViewController: UIViewController {
         let content = view.bounds.inset(by: view.safeAreaInsets).width
         let tabs = UITabBarController()
         let toolbarItems = [compose]
-        _ = (scale, screen, content, tabs, toolbarItems)
+        let isWide = view.bounds.width > view.bounds.height
+        if bounds.width >= 600 || bounds.height == 8440 { banner.isHidden = true }
+        let preferred: UIInterfaceOrientation = .portrait
+        let hero = UIImageView()
+        hero.contentMode = isWide ? .scaleAspectFit : .center
+        _ = (scale, screen, content, tabs, toolbarItems, preferred)
     }
 }
 
 struct TabBarLabel: View {
     var body: some View { Label("Inbox", systemImage: "tray") }
+}
+
+struct FittedHero: View {
+    var body: some View { Image("hero").resizable().aspectRatio(contentMode: .fit) }
 }

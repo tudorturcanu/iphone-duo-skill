@@ -2,8 +2,8 @@ name: HIG drift
 
 # Apple's "Designing for iPhone Duo" article and the iOS 27.1 beta APIs are new and will change. These jobs fail
 # when they do, so references/ and SKILL.md get re-checked. The launch sources (news post, App Store Connect
-# specs, Xcode status) are compared by a few facts. Only hashes, numbers, and availability metadata are stored,
-# never Apple's text.
+# specs, Xcode status, the "Three steps" prepare page) are compared by a few facts. Only hashes, section headings,
+# numbers, and availability metadata are stored, never Apple's text.
 
 on:
   schedule:
@@ -18,18 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Compare article hash
-        run: |
-          url=https://developer.apple.com/tutorials/data/design/human-interface-guidelines/designing-for-iphone-duo.md
-          curl -fsSL "$url" -o hig.md
-          now=$(sed '/^Copyright/,$d' hig.md | sha256sum | cut -d' ' -f1)
-          known=$(cat tests/hig-duo.sha256)
-          if [ "$now" != "$known" ]; then
-            echo "::warning::The HIG article changed. Review it, update references/ and SKILL.md, then update tests/hig-duo.sha256 to $now"
-            grep -A20 '^## Change log' hig.md || true
-            exit 1
-          fi
-          echo "HIG article unchanged ($now)"
+      - name: Compare the article with the recorded section hashes
+        run: python3 tests/check_hig.py
 
   apis:
     runs-on: ubuntu-latest
