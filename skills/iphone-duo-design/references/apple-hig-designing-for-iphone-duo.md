@@ -8,13 +8,12 @@ text or images. Read the sources for exact wording and diagrams:
 
 - HIG article: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
   (Markdown version: https://developer.apple.com/tutorials/data/design/human-interface-guidelines/designing-for-iphone-duo.md).
-  Last checked against the source on 2026-10-07. Its content changed after 2026-09-13, by 2026-10-06, and again by
-  2026-10-07 (tracked by section hashes in `tests/hig-duo.sha256`) while its change log still lists only
-  September 9. Re-read in full on 2026-10-07: every point summarized here still matches. It names the
+  Last checked against the source on 2026-10-21. Tracked by section hashes in `tests/hig-duo.sha256`.
+  Re-read in full on 2026-10-21: every point summarized here matches. It names the
   reserved-region, arrangement-view, and compression APIs and links the screenshot specifications.
 - Developer article: https://developer.apple.com/documentation/technologyoverviews/preparing-your-app-for-iphone-duo
 - Apple's checklist: [Three steps to make your app shine on iPhone Duo](https://developer.apple.com/iphone-duo/prepare/)
-  (SDK tiers, resize patterns to fix, testing tools). Checked 2026-10-07; summarized in §5.
+  (SDK tiers, resize patterns to fix, testing tools, product page badge). Checked 2026-10-21; summarized in §5.
 - Related: [Designing for iOS](https://developer.apple.com/design/human-interface-guidelines/designing-for-ios),
   [Layout](https://developer.apple.com/design/human-interface-guidelines/layout),
   [Split views](https://developer.apple.com/design/human-interface-guidelines/split-views),
@@ -24,7 +23,7 @@ text or images. Read the sources for exact wording and diagrams:
 - Tech Talks (`developer.apple.com/videos/play/tech-talks/<id>`): 111461 *Prepare your app*, 111462 *Raise the bar*,
   111463 *Strike a pose* (adaptive layouts), 111464 *Multiple displays and scenes*, 111465 *Camera*, 111466 *Design for iPhone Duo*.
 - Testing: [Device Hub](https://developer.apple.com/documentation/xcode/device-hub) in Xcode previews poses.
-  The iPhone Duo SDK and simulator ship in Xcode 27.1 (release candidate, build 27A9275, on 2026-10-07).
+  The iPhone Duo SDK and simulator ship in Xcode 27.1 (released October 2026).
 - Launch: [Prepare and submit your apps for iPhone Duo](https://developer.apple.com/news/?id=kkphp5qo) (2026-10-05),
   hub page [developer.apple.com/iphone-duo](https://developer.apple.com/iphone-duo/) (talks, workshops, forums).
   Group Labs: [on demand](https://developer.apple.com/videos/play/meet-with-apple/285) and Apple's
@@ -291,7 +290,7 @@ Rules:
   `TabView` its selected tab), so disabling it for one immersive screen belongs on a full-screen cover or sheet.
 
 **Testing**
-- iPhone Duo SDK and simulator: Xcode 27.1 only (RC on 2026-10-07; the 27.2 beta notes say to use 27.1). Poses come from Device
+- iPhone Duo SDK and simulator: Xcode 27.1 only (released October 2026; the 27.2 beta notes say to use 27.1). Poses come from Device
   Hub; Xcode Previews have a "Display" override for the outer display.
 - Without the Duo simulator, Apple lists two ways to test resizing: the resizable iOS simulator in Device Hub, and
   iPhone Mirroring on macOS 27 (drag the window to extreme sizes both ways). They exercise resizing; don't assume
@@ -313,7 +312,7 @@ Don't hard-code "Face ID" in UI text; read `LAContext().biometryType`.
 
 ## 6. API reference
 
-Checked against Apple's developer docs on 2026-10-06. **iOS 27.1, still marked beta** unless noted. Guard with
+Checked against Apple's developer docs on 2026-10-21. **iOS 27.1** (final release in Xcode 27.1) unless noted. Guard with
 `if #available(iOS 27.1, *)` when the deployment target is lower.
 
 **Reserved regions**

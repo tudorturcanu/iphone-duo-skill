@@ -48,30 +48,30 @@ def main():
         if "Duo" in body.replace("\xa0", " ") and guid not in known:
             problems.append(f"new iPhone Duo news post {guid}: {(it.findtext('title') or '').strip()} (add its id to `known` after reading it)")
 
-    # 3. Screenshot and preview specs: Duo sizes unchanged; the specs page starts mentioning the 2027 deadline.
+    # 3. Screenshot and preview specs: Duo sizes unchanged; the specs page includes the 2027 deadline.
     base = DEV + "help/app-store-connect/reference/app-information/"
     shots = get(base + "screenshot-specifications")
     want = {"1398x2034", "2007x2853", "2034x1398", "2853x2007"}
     if not want <= duo_sizes(shots):
         problems.append(f"screenshot sizes for iPhone Duo changed (missing {sorted(want - duo_sizes(shots))}): re-check references/shipping.md")
-    if "2027" in text(shots):
-        problems.append("screenshot specifications page now mentions 2027: update the 'page lags the news post' note in references/shipping.md")
+    if "2027" not in text(shots):
+        problems.append("screenshot specifications page no longer mentions 2027: re-check references/shipping.md")
     previews = get(base + "app-preview-specifications")
     pt = text(previews)
     for size in ("886 x 1920", "1920 x 886", "2034 × 1398", "2853 × 2007"):
         if size not in pt:
             problems.append(f"app preview page no longer lists {size}: re-check references/shipping.md")
 
-    # 4. Xcode 27.1 status (the skill says 'release candidate').
+    # 4. Xcode 27.1 status (the skill says 'released October 2026').
     import json
     meta = json.loads(get(DEV + "tutorials/data/documentation/xcode-release-notes/xcode-27_1-release-notes.json"))["metadata"]
-    if "RC" not in meta.get("title", ""):
-        problems.append(f"Xcode 27.1 release notes are now titled '{meta.get('title')}': update 'RC' wording in SKILL.md and references/")
+    if meta.get("title") != "Xcode 27.1 Release Notes":
+        problems.append(f"Xcode 27.1 release notes title changed from 'Xcode 27.1 Release Notes' to '{meta.get('title')}': re-check SKILL.md and references/")
 
     # 5. Apple's "Three steps" page: SDK tiers, Apple's own resizability skill, and the testing tools the skill names.
     prepare = text(get(DEV + "iphone-duo/prepare/"))
     for fact in ("iOS 26 SDK", "iOS 27.1 SDK", "xcrun agent skills export", "iPhone Mirroring", "resizable simulator",
-                 "featuring nomination"):
+                 "featuring nomination", "display a badge"):
         if fact not in prepare:
             problems.append(f"prepare page no longer says '{fact}': re-check SKILL.md, the reference (section 5), and references/shipping.md")
 

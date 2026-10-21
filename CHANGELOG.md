@@ -2,6 +2,32 @@
 
 All notable changes to this skill are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [1.3.2] - 2026-10-21
+
+Prompted by the final release of Xcode 27.1 / iOS 27.1, the App Store Connect screenshot specifications
+update, and Apple's confirmation of the "optimized for iPhone Duo" App Store product page badge.
+
+### Added
+- App Store product page badge: Apple's official [Three steps](https://developer.apple.com/iphone-duo/prepare/)
+  page now confirms that when you submit iPhone Duo screenshots in App Store Connect, your App Store product
+  page displays an "optimized for iPhone Duo" badge. Moved from "Not confirmed" to confirmed in `references/shipping.md`.
+- `tests/check_apple_sources.py` now verifies the "display a badge" confirmation on the prepare page alongside the
+  other launch facts.
+
+### Changed
+- Xcode 27.1 and iOS 27.1 status: updated from Release Candidate (RC) to final release in `SKILL.md`,
+  `references/apple-hig-designing-for-iphone-duo.md`, `references/shipping.md`, and `README.md`.
+- iOS 27.1 APIs out of beta: all 35 iOS 27.1 APIs in `tests/apple-apis.tsv` (ReservedRegion, ArrangementView,
+  UIArrangementViewController, onHingeChange, UIHingeInteraction, vertical bar behaviors and edges,
+  AVCaptureDeviceDirectionCoordinator, CameraCaptureAccessory, etc.) are now out of beta in Apple's documentation
+  metadata. `apple-apis.tsv` updated via `tests/check_apple_apis.py --update`.
+- Screenshot specifications page: the App Store Connect specifications page now officially documents the April
+  2027 requirement ("Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or
+  later"). Updated `references/shipping.md`, `tests/check_apple_sources.py`, and Eval 6 in `tests/evals/evals.json`.
+- HIG article drift check: section hashes in `tests/hig-duo.sha256` updated via `tests/check_hig.py --update` after
+  re-reading the full article; every design guidance point in `references/apple-hig-designing-for-iphone-duo.md`
+  remains verified and accurate.
+
 ## [1.3.1] - 2026-10-07
 
 Prompted by Apple's [Three steps to make your app shine on iPhone Duo](https://developer.apple.com/iphone-duo/prepare/)

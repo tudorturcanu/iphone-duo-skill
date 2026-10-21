@@ -2,9 +2,9 @@
 name: iphone-duo-design
 description: Adapts, builds, and reviews SwiftUI and UIKit apps for iPhone Duo, Apple's dual-display hinged iPhone (the folding, book-style iPhone with an outer and inner display). Use whenever the user mentions iPhone Duo, a foldable or dual-screen iPhone, the hinge or fold, half-folded, book or tabletop poses, reserved regions, arrangement views, side or vertical toolbars and tab bars on iPhone, or wants an iOS app audited, fixed, specced, or prepared for App Store submission (screenshots, previews) for iPhone Duo, or has a camera app that must follow which way each display's camera faces. Not for Android foldables (Galaxy Z Fold or Flip), Surface Duo, visionOS, external displays, or general iPad multitasking.
 license: MIT
-compatibility: Needs bash; ripgrep optional (falls back to grep). Verifying on a simulator needs Xcode 27.1 (RC on 2026-10-07; the 27.2 beta lacks the Duo SDK). No network.
+compatibility: Needs bash; ripgrep optional (falls back to grep). Verifying on a simulator needs Xcode 27.1 (released October 2026; the 27.2 beta lacks the Duo SDK). No network.
 metadata:
-  version: "1.3.1"
+  version: "1.3.2"
   author: tudorturcanu
 allowed-tools: Read Grep Glob Bash(bash ${CLAUDE_SKILL_DIR}/scripts/audit_duo_readiness.sh *) Bash(xcrun simctl list devicetypes*)
 ---
@@ -55,8 +55,8 @@ features or data sources nobody asked for. React Native / Flutter bars drawn in 
 **Design specs** (no code): describe what people see in each pose in plain words, keep it short, and put API names
 in a brief "Implementation notes" section at the end.
 
-> **APIs** (checked against Apple's docs, 2026-10-07). Every API named in this file exists. Fold, arrangement, hinge,
-> and vertical-bar APIs are **iOS 27.1** (still marked beta in the docs); `visibilityPriority`,
+> **APIs** (checked against Apple's docs, 2026-10-21). Every API named in this file exists. Fold, arrangement, hinge,
+> and vertical-bar APIs are **iOS 27.1** (final in Xcode 27.1); `visibilityPriority`,
 > `ToolbarOverflowMenu`, `.topBarPinnedTrailing` are 27.0. Guard with `#available` below the deployment target. Signatures are in the reference; anything named in
 > neither: don't guess, leave a marked `TODO`.
 

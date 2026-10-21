@@ -2,12 +2,12 @@
 
 Original summary of Apple's articles *Choosing a camera by the direction it faces* (AVKit) and *Registering a camera
 capture accessory on iPhone Duo* (AVFoundation), plus tech talks 111464 (multiple displays and scenes) and 111465
-(camera). Checked against Apple's docs on 2026-10-06. Read this only for apps that capture photos or video, or that
+(camera). Checked against Apple's docs on 2026-10-21. Read this only for apps that capture photos or video, or that
 show content across both displays. Back to the [main reference](apple-hig-designing-for-iphone-duo.md).
 
 Availability: `AVCaptureDeviceDirectionCoordinator`, `AVCaptureDeviceDescriptor`, `AVCaptureDeviceDirectionMap`, the
-outer / inner ultra-wide device types, `CameraCaptureAccessory`, and `UISceneAccessory.cameraCapture(...)` are **iOS 27.1
-(beta)**. `sceneAccessory(content:)`, `onAvailabilityChange(perform:)`, `UISceneAccessoryRegistration`, and
+outer / inner ultra-wide device types, `CameraCaptureAccessory`, and `UISceneAccessory.cameraCapture(...)` are **iOS 27.1**
+(final release in Xcode 27.1). `sceneAccessory(content:)`, `onAvailabilityChange(perform:)`, `UISceneAccessoryRegistration`, and
 `registerSceneAccessory(_:)` are 27.0. Guard with `#available`. Simulator has no camera: test capture on a device.
 
 ## 1. Which way a camera faces

@@ -18,7 +18,7 @@ iPhone Duo introduces a dual-display form factor with a center hinge, dynamic de
 This skill equips coding assistants to:
 1. **Audit existing codebases for resize hostility** (fixed frames, `UIScreen.main.bounds`, homemade tab bars, manual spacers).
 2. **Refactor layouts to use native system components** that automatically adapt to side placement, fold avoidance, and overflow.
-3. **Use the real iPhone Duo APIs** (iOS 27.1, still beta in Apple's docs; checked against them): reserved regions (`reservedRegions(kind: .division)`), arrangement views (`ArrangementView`, `UIArrangementViewController`), and the side-bar APIs (`visibilityPriority`, `axisBehavior`, `toolbarVerticalCompressionBehavior`). Anything not in the skill gets a marked TODO instead of an invented name.
+3. **Use the real iPhone Duo APIs** (iOS 27.1, final in Xcode 27.1; checked against Apple's docs): reserved regions (`reservedRegions(kind: .division)`), arrangement views (`ArrangementView`, `UIArrangementViewController`), and the side-bar APIs (`visibilityPriority`, `axisBehavior`, `toolbarVerticalCompressionBehavior`). Anything not in the skill gets a marked TODO instead of an invented name.
 4. **Follow Apple Human Interface Guidelines (HIG)** for device poses (flat, book-style, standing) without designing fragmented "per-pose" code branches.
 5. **Get the app into the store**: iPhone Duo screenshot and app preview sizes, and the April 2027 screenshot requirement, when you ask about submission.
 6. **Handle cameras and the outer display**: the virtual front camera, `AVCaptureDeviceDirectionCoordinator`, and camera capture scene accessories, when the app captures photos or video.
