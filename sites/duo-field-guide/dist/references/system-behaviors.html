@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>iPhone Duo system behaviors — Duo Field Guide</title><meta name="description" content="Learn how iPhone Duo system behaviors affect app layout, navigation, state, and transitions."><meta property="og:type" content="website"><meta property="og:site_name" content="Duo Field Guide"><meta property="og:title" content="iPhone Duo system behaviors — Duo Field Guide"><meta property="og:description" content="Learn how iPhone Duo system behaviors affect app layout, navigation, state, and transitions."><meta name="twitter:card" content="summary"><link rel="stylesheet" href="../palette.css?v=9"><link rel="stylesheet" href="../styles.css?v=9"><link rel="stylesheet" href="../refinement.css?v=9"><link rel="stylesheet" href="../guide-nav.css?v=9"><script src="../navigation.js" defer></script></head>
+<body><a class="skip-link" href="#article">Skip to article</a><header class="site-header"><div class="header-inner"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span><strong>duo</strong><span class="brand-divider"></span><span>Developer guide</span></a><a class="header-link" href="../index.html#explore">Back to the explorer ↗</a></div></header>
+<main class="article-shell" id="article"><p class="article-kicker">THE DEVELOPER EDITION / REVIEWED 26 OCT 2026</p><h1 id="system-behaviors-on-iphone-duo-windows-media-motion-widgets-web">System behaviors on iPhone Duo: windows, media, motion, widgets, web</h1>
+<p>Original summary of Apple's written highlights of the iPhone Duo Group Labs
+(<a href="https://developer.apple.com/forums/thread/847644">forum thread 847644</a>, posted by an Apple DTS engineer in September
+2026; <a href="https://developer.apple.com/videos/play/meet-with-apple/285">sessions on demand</a>), read 2026-10-07. API names
+and availability were checked against Apple's docs the same day. These are engineers' answers in a Q&amp;A, not reference
+documentation: they can change, so test on a device before relying on one. Read this only when the question is about
+one of these topics. Back to the <a href="apple-hig-designing-for-iphone-duo.html">main reference</a>.</p>
+<p>Availability: <code>CMBodyIdentifiable</code>, <code>CMMotionManager.deviceMotionBody</code>, and <code>WidgetFamily.systemExtraLargePortrait</code>
+are iOS 27.0; <code>UITabAccessory</code> and AlarmKit are 26.0; the rest is older. Guard with <code>#available</code>.</p>
+<h2 id="1-windows-and-multitasking">1. Windows and multitasking</h2>
+<ul>
+<li>iPhone Duo is the first iPhone that runs several instances of an app's UI, with iPad's scene model: each instance
+  is its own <code>UIScene</code>. New windows can be created only on the inner display.</li>
+<li><code>UserDefaults</code> and <code>@AppStorage</code> are app-wide, so every instance shares them. Keep per-window state in the scene.</li>
+<li>Two apps share the inner display in Split View. There is no Stage Manager and no free-form drag-to-resize: an app's
+  size changes with the pose and with Split View only.</li>
+<li>There is no iPad-app compatibility mode (unlike Apple Vision Pro). How much of the display an iPhone app gets
+  depends on the SDK it was built with (table in the main reference, §5).</li>
+</ul>
+<h2 id="2-state-across-folds">2. State across folds</h2>
+<ul>
+<li>Opening or closing is a size-class and trait change in the same scene; the process stays alive. Text being edited,
+  the keyboard, and scroll position generally carry over, even when a <code>LazyVGrid</code> changes its column count, so
+  there's usually no need to manage <code>scrollPosition(id:anchor:)</code> for this transition.</li>
+<li>For state that must survive a real scene disconnect and reconnect, save an <code>NSUserActivity</code> from
+  <code>stateRestorationActivity(for:)</code>.</li>
+<li>The hinge angle's update rate and precision are system policy and can change: don't build game mechanics that
+  depend on either.</li>
+</ul>
+<h2 id="3-media">3. Media</h2>
+<ul>
+<li>Picture in Picture (<code>AVPlayerViewController</code> or <code>AVPictureInPictureController</code>): open in landscape, people can pin
+  the video to the top while the current app resizes vertically into the rest. Partially folded, the video grows to
+  fill half the screen, so the app's height changes live. Picture in Picture moves to the outer display only when the
+  device closes, and the system controls that move.</li>
+<li>With several instances, the active audio or video session belongs to the one that most recently started playback.</li>
+</ul>
+<h2 id="4-core-motion">4. Core Motion</h2>
+<p>Each display faces a different way, so raw attitude doesn't match the UI. <code>UIView</code> conforms to <code>CMBodyIdentifiable</code>:</p>
+<pre><code class="language-swift">motionManager.deviceMotionBody = view          // nil = the device's hardware coordinate frame
+motionManager.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: .main) { motion, _ in
+    guard let attitude = motion?.attitude else { return }   // already relative to `view` and the display it's on
+}
+</code></pre>
+<ul>
+<li>Core Motion transforms orientation, rotation rate, gravity, and user acceleration to match that view, and keeps
+  doing so as it rotates or moves to the other display. Use one motion manager per view when two views need their
+  own frame.</li>
+<li>Sources disagree about Split View: the Group Labs answer says that when the scene isn't full screen, body-relative
+  orientation isn't available and data arrives in the device's default frame, while the <code>CMBodyIdentifiable</code> docs
+  describe it working in Split View. Test both cases on a device before relying on either.</li>
+<li>You don't need to work out which face is up to lay out the UI: size classes and traits cover that.</li>
+</ul>
+<h2 id="5-outer-display-live-activities-widgets">5. Outer display, Live Activities, widgets</h2>
+<ul>
+<li>An app can't draw on the outer display while the device is open. The ways in are system-controlled: a camera
+  capture scene accessory (<a href="cameras-and-scene-accessories.html">cameras</a>), or AlarmKit, where the system presents the
+  alert through AlarmKit, StandBy, or the Dynamic Island. For AlarmKit, make the alarm-management scenes resize for
+  every size class and design the countdown Live Activity well.</li>
+<li>Live Activities: the outer camera's region grows into the Dynamic Island. Implement every presentation in
+  <code>ActivityConfiguration</code> (<code>compactLeading</code>, <code>compactTrailing</code>, <code>minimal</code>, the expanded regions, the Lock Screen).</li>
+<li>Widget families: <code>systemSmall</code>, <code>systemMedium</code>, <code>systemLarge</code>, <code>systemExtraLargePortrait</code>, and the accessory
+  families (<code>accessoryCircular</code>, <code>accessoryRectangular</code>, <code>accessoryInline</code>).</li>
+<li>Custom content beside the tab bar (a mini player, a status dot): attach a <code>UITabAccessory</code> through
+  <code>UITabBarController.bottomAccessory</code> instead of drawing a custom tab bar, which never moves to the side. It lays
+  out regular or inline, reported by <code>UITabAccessory.Environment</code>.</li>
+</ul>
+<h2 id="6-web-content">6. Web content</h2>
+<ul>
+<li>Safari has the Viewport Segments and Device Posture APIs, but in iOS 27.1 both are experimental and off by default
+  (Settings &gt; Apps &gt; Safari &gt; Advanced &gt; Feature Flags). Don't ship web content that depends on them.</li>
+<li>There is no device-detection API for iPhone Duo. Use responsive layout, as for any screen size.</li>
+</ul>
+<h2 id="7-accessibility">7. Accessibility</h2>
+<ul>
+<li>Dynamic Type behaves the same on both displays (<code>preferredContentSizeCategory</code>). On a fixed, one-screen layout,
+  holding text at the largest standard size instead of letting it reflow or scale can fail the accessibility
+  guidelines, and the short outer display makes this more likely: let content scroll.</li>
+<li>VoiceOver order follows standard containers and grouping. A custom layout that spans the fold may need explicit
+  accessibility containers or sort priorities.</li>
+<li>Test Dynamic Type and contrast in each pose. Test VoiceOver directly on a device: Xcode 27.2 RC's Device Hub has an
+  accessibility inspection limitation; see <a href="apple-hig-designing-for-iphone-duo.html#5-beyond-the-hig-developer-article-and-tech-talks">testing</a>.</li>
+</ul></main>
+<footer class="site-footer section-shell"><span>Independent developer guide · Not affiliated with Apple</span><a href="../sources.html">Sources & methodology ↗</a></footer></body></html>

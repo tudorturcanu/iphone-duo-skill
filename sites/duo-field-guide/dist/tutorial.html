@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Your first iPhone Duo audit — Duo Field Guide</title><meta name="description" content="Audit and adapt a SwiftUI app for iPhone Duo with a practical walkthrough, code examples, and testing guidance."><meta property="og:type" content="website"><meta property="og:site_name" content="Duo Field Guide"><meta property="og:title" content="Your first iPhone Duo audit — Duo Field Guide"><meta property="og:description" content="Audit and adapt a SwiftUI app for iPhone Duo with a practical walkthrough, code examples, and testing guidance."><meta name="twitter:card" content="summary"><link rel="stylesheet" href="palette.css?v=9"><link rel="stylesheet" href="styles.css?v=9"><link rel="stylesheet" href="refinement.css?v=9"><link rel="stylesheet" href="guide-nav.css?v=9"><script src="navigation.js" defer></script></head>
+<body><a class="skip-link" href="#article">Skip to article</a><header class="site-header"><div class="header-inner"><a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span><strong>duo</strong><span class="brand-divider"></span><span>Developer guide</span></a><a class="header-link" href="index.html#explore">Back to the explorer ↗</a></div></header>
+<main class="article-shell" id="article"><p class="article-kicker">THE DEVELOPER EDITION / REVIEWED 26 OCT 2026</p><h1 id="your-first-iphone-duo-audit">Your first iPhone Duo audit</h1>
+<p>Use this walkthrough to run the scanner, fix two common SwiftUI patterns, and decide what still needs device testing. You will work on a temporary copy of the bundled Notes example. The original fixtures stay unchanged.</p>
+<p>Prefer a quick reference? Jump to <a href="#everyday-tips">everyday tips</a> or <a href="#troubleshooting">troubleshooting</a>.</p>
+<h2 id="before-you-start">Before you start</h2>
+<ul>
+<li>Open a terminal in this repository's root—the folder containing <code>README.md</code>, <code>skills/</code>, and <code>tests/</code>.</li>
+<li>The audit needs Bash. Ripgrep is optional; it falls back to grep. JSON <code>.xcproj</code> files also need Python 3, with no extra packages.</li>
+<li>You can run the audit without Xcode. Building the examples and checking Duo behavior requires a suitable Xcode SDK and simulator or device.</li>
+<li>This lab's code assumes an <strong>iOS 27.1 deployment target</strong>. In an existing app, preserve its deployment target and add availability guards or fallbacks for newer APIs. Building with a newer SDK does not require raising your app's minimum OS version.</li>
+</ul>
+<p>The fixtures are Swift source examples, <strong>not complete runnable Xcode projects</strong>. Installing just the skill does not install <code>tests/</code>; use this repository copy for the walkthrough. See the <a href="https://github.com/tudorturcanu/iphone-duo-skill#-quick-install">README</a> for normal skill installation.</p>
+<p>Checked October 26, 2026: the commands produced the intermediate results below, and the edited Swift files typechecked with Swift 6 and the iOS 27.1 simulator SDK in Xcode 27.1. This verifies the source examples, not their appearance on a simulator or device.</p>
+<h2 id="1-make-a-practice-copy-and-run-the-audit">1. Make a practice copy and run the audit</h2>
+<p>Run this in one terminal session; later commands reuse these variables:</p>
+<pre><code class="language-bash">DUO_AUDIT=&quot;$PWD/skills/iphone-duo-design/scripts/audit_duo_readiness.sh&quot;
+DUO_LAB=&quot;$(mktemp -d &quot;${TMPDIR:-/tmp}/duo-tutorial.XXXXXX&quot;)&quot;
+cp -R tests/fixtures/NotesApp &quot;$DUO_LAB/NotesApp&quot;
+printf 'Practice folder: %s\n' &quot;$DUO_LAB/NotesApp&quot;
+
+if bash &quot;$DUO_AUDIT&quot; &quot;$DUO_LAB/NotesApp&quot; -s; then
+    DUO_STATUS=0
+else
+    DUO_STATUS=$?
+fi
+printf 'Audit exit code: %s\n' &quot;$DUO_STATUS&quot;
+</code></pre>
+<p>The current fixture reports:</p>
+<pre><code class="language-text">11 line(s) flagged in 9 categories. Review each in context.
+Audit exit code: 1
+</code></pre>
+<p>That is the expected result. The audit found candidates to review; it did not crash.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Exit code</th>
+<th>Meaning</th>
+<th>Next action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>No blocking patterns found; advisory items may still appear</td>
+<td>Build and test the UI. A clean scan is not a readiness certificate.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>One or more potential anti-patterns</td>
+<td>Read the reported lines and their surrounding code.</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>Incomplete audit: bad input, missing dependency, unsupported JSON, or a search error</td>
+<td>Resolve the error before trusting the result.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Now show the source locations:</p>
+<pre><code class="language-bash">bash &quot;$DUO_AUDIT&quot; &quot;$DUO_LAB/NotesApp&quot; -q
+</code></pre>
+<p>This also exits <code>1</code>. <code>-q</code> hides clean categories and shows up to five matches per category. Use <code>-q -n 0</code> when you need every match. One line can trigger several categories, so category counts are not a count of independent bugs.</p>
+<h2 id="2-replace-the-homemade-tab-bar">2. Replace the homemade tab bar</h2>
+<p>Open <code>NotesRootView.swift</code> <strong>inside the practice folder printed above</strong>. The original uses screen-wide sizing, a hard-coded top inset, and an <code>HStack</code> of buttons for navigation. These bypass the container that can place the tab bar for the current display.</p>
+<p>Replace that file with:</p>
+<pre><code class="language-swift">import SwiftUI
+
+struct NotesRootView: View {
+    @State private var selectedTab = 0
+
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            Tab(&quot;Notes&quot;, systemImage: &quot;note.text&quot;, value: 0) {
+                NotesListView()
+            }
+            Tab(&quot;Search&quot;, systemImage: &quot;magnifyingglass&quot;, value: 1) {
+                Text(&quot;Search View&quot;)
+            }
+            Tab(&quot;Settings&quot;, systemImage: &quot;gearshape&quot;, value: 2) {
+                Text(&quot;Settings View&quot;)
+            }
+        }
+    }
+}
+</code></pre>
+<p>All three destinations and the selected-tab state remain. The system now owns tab placement and safe-area handling; the fixed screen width and manual insets are gone. <code>Tab</code> requires iOS 18 or later. See Apple's <a href="https://developer.apple.com/documentation/swiftui/tab">Tab documentation</a>.</p>
+<p>Rerun the audit:</p>
+<pre><code class="language-bash">bash &quot;$DUO_AUDIT&quot; &quot;$DUO_LAB/NotesApp&quot; -q
+</code></pre>
+<p>Expected: <strong>5 lines flagged in 5 categories</strong>, all in <code>NotesListView.swift</code>. The root-view findings should be gone. Do not move on if a different file was edited by mistake.</p>
+<h2 id="3-give-the-toolbar-separate-labeled-actions">3. Give the toolbar separate, labeled actions</h2>
+<p>In the practice copy of <code>NotesListView.swift</code>, replace the entire <code>.toolbar { ... }</code> modifier with this one. Keep the surrounding <code>NavigationStack</code>, scrolling content, and <code>.navigationTitle</code>:</p>
+<pre><code class="language-swift">.toolbar {
+    ToolbarItemGroup(placement: .topBarTrailing) {
+        Button(&quot;Compose&quot;, systemImage: &quot;square.and.pencil&quot;, action: {})
+    }
+    .visibilityPriority(.high)
+
+    ToolbarOverflowMenu {
+        Button(&quot;Sort by Date&quot;, systemImage: &quot;calendar&quot;, action: {})
+        Button(&quot;Select Notes&quot;, systemImage: &quot;checkmark.circle&quot;, action: {})
+        Button(&quot;Settings&quot;, systemImage: &quot;gearshape&quot;, action: {})
+    }
+}
+</code></pre>
+<p>The fixture already uses empty action closures; they remain empty here to focus on layout. In a real app, move each existing action into its matching button—do not replace working actions with these placeholders.</p>
+<p>Compose gets priority, every action has a title and symbol, and the three secondary actions remain reachable through the system overflow menu. There is no manual spacer or group of buttons hidden inside one toolbar item. The overflow title also stays available when the system changes an item's presentation. These toolbar APIs require iOS 27.0 or later; see <a href="https://developer.apple.com/documentation/swiftui/toolbaroverflowmenu">ToolbarOverflowMenu</a>.</p>
+<pre><code class="language-bash">bash &quot;$DUO_AUDIT&quot; &quot;$DUO_LAB/NotesApp&quot; -q
+</code></pre>
+<p>Expected: <strong>1 line flagged in 1 category</strong>—the fixed three-column grid. Exit <code>1</code> is still correct.</p>
+<h3 id="why-leave-the-grid-for-a-separate-layout-decision">Why leave the grid for a separate layout decision?</h3>
+<p>Changing <code>count: 3</code> to another fixed number can silence this particular warning without making the layout adapt. Decide how many readable cards fit in the view's available width, and account for a division region when a fold is present. A bare <code>.adaptive</code> grid can still produce an odd count.</p>
+<p>Use the <a href="references/apple-hig-designing-for-iphone-duo.html#3-dynamic-layouts">fold and grid guidance</a> and <a href="references/apple-hig-designing-for-iphone-duo.html#7-code-patterns">code patterns</a> for that next step. Scrolling grids and stationary controls need different treatment; inspect the actual screen rather than adding hinge-angle layout branches.</p>
+<p>For comparison, this repository's clean fixture should exit <code>0</code>:</p>
+<pre><code class="language-bash">bash &quot;$DUO_AUDIT&quot; tests/fixtures/Clean -q
+</code></pre>
+<p>That demonstrates a clean scan, not a tested shipping app.</p>
+<h2 id="4-apply-the-workflow-to-your-app">4. Apply the workflow to your app</h2>
+<p>Replace the example path below with your app's source folder, including its project configuration:</p>
+<pre><code class="language-bash">DUO_APP=&quot;/absolute/path/to/Your App&quot;
+bash &quot;$DUO_AUDIT&quot; &quot;$DUO_APP&quot; -s
+bash &quot;$DUO_AUDIT&quot; &quot;$DUO_APP&quot; -q
+</code></pre>
+<p>Fix launch and scene-lifecycle problems first, then sizing and safe-area assumptions, then bars and fold-related layout. Rerun the audit after each focused change and explain any hits you keep. A fixed-width icon, for example, has a different purpose from a fixed-width page container.</p>
+<p>If you use an agent, give it a bounded task:</p>
+<blockquote>
+<p>Use the iphone-duo-design skill to audit the app at [my app path]. Start with a summary, then inspect each finding in context. Fix launch blockers and layout problems while preserving existing actions, state, and the deployment target. Build with my app's scheme if available. Report remaining findings and identify which display and pose checks still need a simulator or device. Do not claim the app is ready based only on a clean scan.</p>
+</blockquote>
+<p>For the local unreleased changes, point the agent at this checkout's <code>skills/iphone-duo-design/SKILL.md</code>; a previously installed copy can be older.</p>
+<h3 id="json-project-settings">JSON project settings</h3>
+<p>The audit also reads <code>.xcproj</code> files inside <code>.xcodeproj</code> bundles. It checks project and target <code>build-settings</code> objects, including conditional keys such as:</p>
+<pre><code class="language-json">{
+  &quot;build-settings&quot;: {
+    &quot;INFOPLIST_KEY_UIRequiresFullScreen[config=Release]&quot;: &quot;YES&quot;
+  }
+}
+</code></pre>
+<p>This is a <strong>settings excerpt</strong>, not a complete project. It produces a full-screen opt-out candidate. The scanner accepts strings, arrays of strings, comments, and trailing commas as Xcode emits them. It does not evaluate inherited values, target overrides, or external <code>.xcconfig</code> files. Confirm effective settings for each configuration in Xcode before changing them.</p>
+<h2 id="5-verify-what-the-scanner-cannot-see">5. Verify what the scanner cannot see</h2>
+<p>Build your real app with the iOS 27.1 SDK or later. Then walk this short checklist in Device Hub and, where needed, directly on hardware:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Try this</th>
+<th>Look for this</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Close the device; rotate the outer display</td>
+<td>Side bars fit, and the camera region covers no important content.</td>
+</tr>
+<tr>
+<td>Open in landscape, then portrait</td>
+<td>Side bars in inner landscape; horizontal bars in inner portrait.</td>
+</tr>
+<tr>
+<td>Partially fold in book and tabletop poses</td>
+<td>Important stationary text and controls stay clear of the fold; movement is modest.</td>
+</tr>
+<tr>
+<td>Switch between displays while editing</td>
+<td>Selection, drafts, and scroll position survive.</td>
+</tr>
+<tr>
+<td>Use Split View on either side; try a right-to-left language</td>
+<td>Content respects the hardware edge and asymmetric safe areas.</td>
+</tr>
+<tr>
+<td>Use the smallest window and larger Dynamic Type</td>
+<td>Actions remain reachable; text can reflow or scroll.</td>
+</tr>
+<tr>
+<td>Use VoiceOver directly on a device</td>
+<td>Labels, reading order, and focus work across layouts.</td>
+</tr>
+</tbody>
+</table></div>
+<p>The full <a href="references/skill.html#verification-checklist-mark-each-row-verified-fixed-or-not-verifiable">verification checklist</a> also covers active cameras and Live Activities. Mark each check <strong>verified</strong>, <strong>needs work</strong>, or <strong>not tested</strong>.</p>
+<p>A useful report is specific: “Audit: one grid finding remains. Build: passed with the iOS 27.1 SDK. Outer-display rotation: tested. Fold and VoiceOver: not tested.” Never copy that example as a result without doing those checks.</p>
+<h2 id="everyday-tips">Everyday tips</h2>
+<ul>
+<li><strong>Size from the view, not the phone model.</strong> Available space changes while the app is running.</li>
+<li><strong>Let containers own the bars.</strong> Use <code>TabView</code>, navigation containers, and toolbar items; avoid drawing a replacement tab bar.</li>
+<li><strong>Keep actions near their content.</strong> List-level controls belong with the list, not automatically in the detail pane's side bar.</li>
+<li><strong>Prefer small adjustments around the fold.</strong> Use reserved regions for layout; use hinge angle for interactions that actually need it.</li>
+<li><strong>Give icon actions names.</strong> Titles are useful in overflow menus and for accessibility even when only symbols are visible.</li>
+<li><strong>Review advisory cropping hits.</strong> Aspect fill can be right for a thumbnail and wrong for a diagram; the scanner cannot decide that from syntax.</li>
+<li><strong>Keep the audit output useful.</strong> Start with <code>-s</code>, inspect with <code>-q</code>, and use <code>-n 0</code> only when you need every location.</li>
+</ul>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The audit exits <code>1</code></td>
+<td>Review the candidates. This is the normal result for the unmodified Notes fixture.</td>
+</tr>
+<tr>
+<td>“No Swift files or Xcode projects”</td>
+<td>Check the path. A folder containing only a plist is not enough.</td>
+</tr>
+<tr>
+<td>A JSON project exits <code>2</code></td>
+<td>Check Python 3 and the reported file. Unsupported JSON5 syntax, duplicate keys, and malformed input are explicit errors; do not treat them as clean.</td>
+</tr>
+<tr>
+<td>A screenshot is black</td>
+<td>Check the selected display and allow startup time. Xcode 27.2 RC documents temporarily black captures after boot.</td>
+</tr>
+<tr>
+<td>Device Hub cannot expose Duo content to VoiceOver</td>
+<td>Xcode 27.2 RC has a documented limitation. Test directly on hardware.</td>
+</tr>
+<tr>
+<td>The audit is clean but the screen still looks wrong</td>
+<td>Inspect view behavior, safe areas, overflow, state, and effective build settings. Static pattern matching cannot verify them all.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Tool limitations are version-specific. Check the maintained <a href="references/apple-hig-designing-for-iphone-duo.html#5-beyond-the-hig-developer-article-and-tech-talks">testing notes</a> and <a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes">Apple's Xcode release notes</a> when your Xcode version changes.</p>
+<p>For submission assets, use the <a href="references/shipping.html">shipping guide</a>. For capture and the outer display, use the <a href="references/cameras-and-scene-accessories.html">camera guide</a>.</p></main>
+<footer class="site-footer section-shell"><span>Independent developer guide · Not affiliated with Apple</span><a href="sources.html">Sources & methodology ↗</a></footer></body></html>

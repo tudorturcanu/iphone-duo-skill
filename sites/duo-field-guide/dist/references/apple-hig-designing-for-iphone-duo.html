@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>iPhone Duo design and API reference — Duo Field Guide</title><meta name="description" content="Explore iPhone Duo design guidance, SwiftUI patterns, adaptive layouts, reserved regions, and API availability."><meta property="og:type" content="website"><meta property="og:site_name" content="Duo Field Guide"><meta property="og:title" content="iPhone Duo design and API reference — Duo Field Guide"><meta property="og:description" content="Explore iPhone Duo design guidance, SwiftUI patterns, adaptive layouts, reserved regions, and API availability."><meta name="twitter:card" content="summary"><link rel="stylesheet" href="../palette.css?v=9"><link rel="stylesheet" href="../styles.css?v=9"><link rel="stylesheet" href="../refinement.css?v=9"><link rel="stylesheet" href="../guide-nav.css?v=9"><script src="../navigation.js" defer></script></head>
+<body><a class="skip-link" href="#article">Skip to article</a><header class="site-header"><div class="header-inner"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span><strong>duo</strong><span class="brand-divider"></span><span>Developer guide</span></a><a class="header-link" href="../index.html#explore">Back to the explorer ↗</a></div></header>
+<main class="article-shell" id="article"><p class="article-kicker">THE DEVELOPER EDITION / REVIEWED 26 OCT 2026</p><h1 id="designing-for-iphone-duo-condensed-reference">Designing for iPhone Duo — condensed reference</h1>
+<p>This is an original summary of Apple's Human Interface Guidelines article
+<em>Designing for iPhone Duo</em> (first published September 9, 2026), the developer article
+<em>Preparing your app for iPhone Duo</em>, and Apple's iPhone Duo tech talks, written for AI
+coding agents. It preserves the guidance and the developer-doc links but not Apple's
+text or images. Read the sources for exact wording and diagrams:</p>
+<ul>
+<li>HIG article: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
+  (Markdown version: https://developer.apple.com/tutorials/data/design/human-interface-guidelines/designing-for-iphone-duo.md).
+  Last checked against the source on 2026-10-26. Tracked by section hashes in <code>tests/hig-duo.sha256</code>.
+  Re-read in full on 2026-10-26 after five sections drifted: the summarized design guidance still matches. It names the
+  reserved-region, arrangement-view, and compression APIs and links the screenshot specifications.</li>
+<li>Developer article: https://developer.apple.com/documentation/technologyoverviews/preparing-your-app-for-iphone-duo</li>
+<li>Apple's checklist: <a href="https://developer.apple.com/iphone-duo/prepare/">Three steps to make your app shine on iPhone Duo</a>
+  (SDK tiers, resize patterns to fix, testing tools, product page badge). Checked 2026-10-26; summarized in §5.</li>
+<li>Related: <a href="https://developer.apple.com/design/human-interface-guidelines/designing-for-ios">Designing for iOS</a>,
+  <a href="https://developer.apple.com/design/human-interface-guidelines/layout">Layout</a>,
+  <a href="https://developer.apple.com/design/human-interface-guidelines/split-views">Split views</a>,
+  <a href="https://developer.apple.com/design/human-interface-guidelines/toolbars">Toolbars</a>,
+  <a href="https://developer.apple.com/design/human-interface-guidelines/designing-for-games">Designing for games</a>,
+  <a href="https://developer.apple.com/design/resources/#ios-apps">Apple Design Resources</a></li>
+<li>Tech Talks (<code>developer.apple.com/videos/play/tech-talks/&lt;id&gt;</code>): 111461 <em>Prepare your app</em>, 111462 <em>Raise the bar</em>,
+  111463 <em>Strike a pose</em> (adaptive layouts), 111464 <em>Multiple displays and scenes</em>, 111465 <em>Camera</em>, 111466 <em>Design for iPhone Duo</em>.</li>
+<li>Testing: <a href="https://developer.apple.com/documentation/xcode/device-hub">Device Hub</a> in Xcode previews poses.
+  The iPhone Duo SDK and simulator ship in Xcode 27.1 (released October 2026).</li>
+<li>Launch: <a href="https://developer.apple.com/news/?id=kkphp5qo">Prepare and submit your apps for iPhone Duo</a> (2026-10-05),
+  hub page <a href="https://developer.apple.com/iphone-duo/">developer.apple.com/iphone-duo</a> (talks, workshops, forums).
+  Group Labs: <a href="https://developer.apple.com/videos/play/meet-with-apple/285">on demand</a> and Apple's
+  <a href="https://developer.apple.com/forums/thread/847644">written highlights</a> (the "Apple DTS" answers cited below;
+  the topics beyond layout are in <a href="system-behaviors.html">system-behaviors.md</a>).</li>
+</ul>
+<h2 id="contents">Contents</h2>
+<ol>
+<li><a href="#1-what-the-device-is">What the device is</a></li>
+<li><a href="#2-best-practices-the-headline-rules">Best practices</a></li>
+<li><a href="#3-dynamic-layouts">Dynamic layouts</a>: reserved regions, folding, split and arrangement views</li>
+<li><a href="#4-vertical-controls">Vertical controls</a></li>
+<li><a href="#5-beyond-the-hig-developer-article-and-tech-talks">Beyond the HIG</a>: SDK, screens, bars, displacement, scenes, testing</li>
+<li><a href="#6-api-reference">API reference</a>: exact names and signatures</li>
+<li><a href="#7-code-patterns">Code patterns</a>: UIKit bars, fold-aware layout, even-column grids</li>
+<li>Separate files: <a href="cameras-and-scene-accessories.html">cameras and scene accessories</a>, <a href="shipping.html">shipping to the App Store</a>,
+   <a href="system-behaviors.html">system behaviors</a> (several windows, Picture in Picture, Core Motion, widgets, web, accessibility)</li>
+</ol>
+<h2 id="1-what-the-device-is">1. What the device is</h2>
+<ul>
+<li>Two displays (outer and inner), each with its own front-facing camera, joined by a
+  center hinge. People open, close, and half-fold it, and rest it in many poses.</li>
+<li>It is still an iPhone. All "Designing for iOS" guidance applies. Apps built from
+  standard system components that already resize well adapt with little extra work.</li>
+<li><strong>Outer display:</strong> used when closed. Wider and shorter than earlier iPhones. The
+  system moves toolbars, tab bars, and navigation controls to the <strong>side</strong> to save
+  vertical space. The outer camera sits in a corner, always visible, vertically aligned
+  with those side controls.</li>
+<li><strong>Inner display:</strong> used when open. Side controls stay in landscape (continuity with
+  the outer display). Portrait keeps standard horizontal bars. The inner camera is
+  hidden behind the display until it is active.</li>
+<li><strong>Poses</strong> include partially folded like a book, laid flat, and standing on an edge.
+  Don't design a layout per pose. Use size classes: a compact-width layout (outer) and
+  a regular-width layout (inner) cover every pose. Let the existing layout expand
+  instead of reinventing it at each size.</li>
+</ul>
+<h2 id="2-best-practices-the-headline-rules">2. Best practices (the headline rules)</h2>
+<ol>
+<li><strong>Build to resize.</strong> Two displays, many poses, and Split View multitasking mean many
+   sizes. Lay out with size classes, layout margins, and safe-area insets. No fixed
+   widths, no display-specific dependencies.</li>
+<li><strong>Consistent experience across displays.</strong> Same functionality and element state on
+   both. Keep the information hierarchy; the larger inner display may show one extra
+   level (Mail: list <em>or</em> message when closed, list <em>and</em> message when open).</li>
+<li><strong>Same functionality in every pose.</strong> Controls may overflow and content may move or
+   resize, but everything stays reachable.</li>
+<li><strong>Accept the system's vertical bar layout.</strong> Standard components get it for free.
+   Refine it, don't replace it.</li>
+<li><strong>Games must be playable in every pose.</strong> Orientation lock is allowed, but fill the
+   screen as the pose changes. Keep text and control sizes steady. Prefer changing the
+   aspect ratio to letterboxing or pillarboxing; if you must box, fill the padding with
+   artwork.</li>
+</ol>
+<h2 id="3-dynamic-layouts">3. Dynamic layouts</h2>
+<p>Use layout margins and safe-area insets everywhere.
+Developer docs: SwiftUI <code>GeometryProxy.safeAreaInsets</code>, UIKit <code>UIView.safeAreaInsets</code>.</p>
+<h3 id="reserved-regions">Reserved regions</h3>
+<p>Areas content must not cover, or that components adapt around (like iPad window
+controls). Three of them:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Region</th>
+<th>When present</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Outer front camera</td>
+<td>Always</td>
+<td>Expands into the Dynamic Island for Live Activities. Side controls account for it automatically.</td>
+</tr>
+<tr>
+<td>Inner front camera</td>
+<td>Only while the camera is active</td>
+<td>Invisible when inactive; the UI shifts aside when it activates.</td>
+</tr>
+<tr>
+<td>Folding region</td>
+<td>Only while partially open</td>
+<td>Splits the inner display into usable areas on either side of the center.</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>Alerts, context menus, and sheets move around the fold on their own (Apple DTS: folded, sheets move to the
+  leading edge; flat, they're centered). Split views rebalance column widths and margins to match the inner
+  display's symmetry. No traits or safe-area insets come from the fold by default.</li>
+<li>Custom components use the reserved-region APIs to keep important elements clear:
+  SwiftUI <code>ReservedRegion</code> (from <code>GeometryProxy.reservedRegions(kind:options:layoutDirectionBehavior:)</code>),
+  UIKit <code>UIView.ReservedRegion</code> (from <code>UIView.reservedRegions(kind:options:)</code>). Kinds: <code>.division</code> (the fold)
+  and <code>.occlusion</code> (a camera, including the Dynamic Island). See §6.</li>
+<li>A custom element that overlaps a reserved region such as the camera without using these APIs may not get its
+  touches: they can be suppressed there (Apple DTS). Both sides of the fold take touches at once when half folded.</li>
+</ul>
+<h3 id="adapting-when-the-device-folds">Adapting when the device folds</h3>
+<ul>
+<li>Prefer containers that adapt automatically. Notes' split view widens or narrows each
+  pane so both stay readable when folded (panes become equal width).</li>
+<li>Grids: use an <strong>even</strong> number of columns so items don't straddle the fold.</li>
+<li>Avoid extreme changes as the device folds. Move only what must move to stay visible
+  and tappable. Small adjustments beat rearrangement, because controls that vanish or
+  jump are hard to track.</li>
+</ul>
+<h3 id="split-views">Split views</h3>
+<p>Expand on the inner display, collapse to one pane on the outer display, exactly like
+regular ↔ compact on other iPhones. Built with standard components, they adapt to
+reserved regions automatically.
+Developer docs: SwiftUI <code>NavigationSplitView</code>, UIKit <code>UISplitViewController</code>.</p>
+<h3 id="arrangement-views">Arrangement views</h3>
+<p>A layout container holding a <strong>primary</strong> and a <strong>secondary</strong> view, organized by display
+size, orientation, and reserved regions. Two kinds:</p>
+<ul>
+<li><strong>Split arrangement.</strong> Divides its area between the two views. Horizontal split when
+  wider than tall, vertical split when taller than wide. You can restrict which axes it
+  may use.</li>
+<li><strong>Overlay arrangement.</strong> Places the primary view atop the secondary. When partially
+  folded, the views move to opposite sides of the fold (primary to the trailing or bottom
+  side, secondary to the leading or top side). The secondary view can be collapsed.</li>
+</ul>
+<p>Guidance:
+- Use one when your layout already looks like one: <code>HStack</code> / <code>VStack</code> → split
+  arrangement; <code>ZStack</code> → overlay arrangement.
+- Split fits main/detail; overlay fits foreground/background (a player over its queue).
+- Arrangement views don't navigate. Put a <code>NavigationStack</code> / <code>TabView</code> (or a
+  <code>UINavigationController</code>) around them. The developer article says not to place one inside a
+  <code>NavigationSplitView</code>, <code>List</code>, or <code>ScrollView</code>, where part of it could become unreachable. (The HIG names
+  navigation split views among the containers to put around one; if you do, keep the arrangement fully reachable.)
+- Developer docs: SwiftUI <code>ArrangementView</code>, UIKit <code>UIArrangementViewController</code>. See §6.</p>
+<h2 id="4-vertical-controls">4. Vertical controls</h2>
+<p>Toolbars, tab bars, and navigation controls move to the side on the outer display and
+on the inner display in landscape. Inner-display portrait keeps horizontal bars.</p>
+<p>The side column holds, top to bottom: Dynamic Island, status bar, toolbar (including
+navigation buttons), tab bar.</p>
+<p>In Split View multitasking on the inner display, each app puts its controls on its
+<strong>outer</strong> edge (left app → left edge, right app → right edge).</p>
+<p>Side controls stay aligned with the hardware: same position relative to the outer
+camera, and the same physical side in right-to-left languages.</p>
+<p>Rules:</p>
+<ul>
+<li><strong>Account for asymmetry.</strong> Content space is lopsided. Use safe areas so controls,
+  including the other app's controls on the opposite edge in Split View, never cover
+  content.</li>
+<li><strong>Keep controls consistent across poses.</strong> Not every pose has side controls or the
+  same space. Keep relative positions as stable as possible.</li>
+<li><strong>Standard placement order</strong> on the vertical axis: primary navigation (Back, Close)
+  at the top, then prominent actions (Done), then the remaining items in their original
+  groups. The system inserts space between items that came from the top bar and items
+  that came from the bottom bar.</li>
+<li><strong>Prioritize frequently used items.</strong> Items overflow bottom-to-top by default. Assign
+  visibility priority to whole groups first, then to individual items for finer control.
+  Keep frequent actions (Compose, New Note) and status-bearing items (badges) visible
+  longest.
+  Developer docs: SwiftUI <code>ToolbarItemVisibilityPriority</code>, UIKit <code>UIBarButtonItemVisibilityPriority</code>.
+  Set it with SwiftUI <code>.visibilityPriority(_:)</code> on any <code>ToolbarContent</code>, including a <code>ToolbarItemGroup</code>
+  (<code>.automatic</code>, <code>.low</code>, <code>.high</code>, or <code>init(higherThan:)</code>/<code>init(lowerThan:)</code>), or UIKit
+  <code>UIBarButtonItem.visibilityPriority</code> (<code>.high</code>, <code>.standard</code>, <code>.low</code>, <code>init(higherThan:)</code>/<code>init(lowerThan:)</code>,
+  or <code>init(rawValue:)</code>).</li>
+<li><strong>Don't override default bar placement.</strong> Side placement is a core iPhone Duo pattern.</li>
+<li><strong>Full-width layouts</strong> are fine for immersive, non-scrolling interfaces if nothing
+  collides with the Dynamic Island or status bar. Calculator goes from 4 columns × 5
+  rows on iPhone 16 to 5 columns × 4 rows on the Duo outer display. A full-width
+  background or header with inset scrolling content also works.</li>
+<li><strong>Group items, don't space them manually.</strong> Groups provide and adapt spacing.
+  Developer docs: SwiftUI <code>ToolbarItemGroup</code>, UIKit <code>UIBarButtonItemGroup</code>.</li>
+<li><strong>Keep controls near the content they affect.</strong> Controls for the leading pane (Mail's
+  list controls) stay above that pane; only trailing-pane controls go to the side.</li>
+<li><strong>Title and symbol on every non-text item.</strong> The system chooses the representation
+  and uses the title in overflow menus and expanded forms.
+  Developer docs: SwiftUI <code>Label</code>, UIKit <code>UIBarButtonItem</code>.</li>
+<li><strong>Minimize text-only buttons.</strong> Text labels stay in a horizontal bar; prefer symbols.</li>
+<li><strong>When space is limited, choose what to keep:</strong></li>
+<li>Navigation-focused view → toolbar items go to the overflow menu, tab bar stays.
+    This is the default compression behavior.</li>
+<li>Task-oriented view → minimize the tab bar, keep the toolbar (mirrors the minimized
+    tab bar on other iPhones). Developer docs: SwiftUI <code>ToolbarVerticalCompressionBehavior</code>
+    (<code>.toolbarVerticalCompressionBehavior(.prefersToolbarItems)</code>), UIKit <code>UIVerticalBarCompressionBehavior</code>
+    (<code>navigationItem.verticalBarCompressionBehavior = .prefersBarItems</code>).</li>
+<li><strong>Use the system overflow menu.</strong> Move any custom overflow actions into it. Reserve
+  the ellipsis symbol for overflow; give other menus a distinct symbol.
+  Developer docs: SwiftUI <code>ToolbarOverflowMenu</code>, UIKit <code>UINavigationItem.additionalOverflowItems</code>.</li>
+</ul>
+<h2 id="5-beyond-the-hig-developer-article-and-tech-talks">5. Beyond the HIG: developer article and tech talks</h2>
+<p><strong>Build and screens</strong>
+- Build with a Duo-capable Xcode (iOS 27.1 SDK or later). What each SDK gets on iPhone Duo (Apple's "Three steps" page):</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Built with</th>
+<th>Open (inner display)</th>
+<th>Closed (outer display)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>iOS 26 SDK or earlier</td>
+<td>centered, empty space around the window</td>
+<td>content left of the status bar and camera</td>
+</tr>
+<tr>
+<td>iOS 27.0 SDK</td>
+<td>fills most of the display, still avoids the status bar on the right edge</td>
+<td>not stated</td>
+</tr>
+<tr>
+<td>iOS 27.1 SDK or later</td>
+<td>full display, bars vertical below the status bar: what Apple calls optimized</td>
+<td>full display, side bars</td>
+</tr>
+</tbody>
+</table></div>
+<p>Before shipping a 27.1 build, check that content adapts to the bars going vertical.
+- Re-read sizes whenever they change, not once at launch or in <code>viewIsAppearing</code>: a fold resizes the app mid-session.
+  Lay out in <code>layoutSubviews</code> / <code>viewDidLayoutSubviews</code> (SwiftUI: <code>GeometryReader</code>, <code>onGeometryChange</code>); use
+  <code>viewWillTransition(to:with:)</code> for work that must run on a size change. Create windows with
+  <code>UIWindow(windowScene:)</code>, not <code>UIWindow(frame: UIScreen.main.bounds)</code>, and don't store a <code>UIScreen</code>.
+- <code>UIScreen.main</code> is deprecated since iOS 26.0 and ambiguous on a two-display device (talk 111461 still says
+  "will be deprecated"; the API docs list it as deprecated). Use the view or scene bounds,
+  <code>window?.windowScene?.screen</code>, and <code>traitCollection.displayScale</code>.
+- <code>UIRequiresFullScreen</code> is still honored, but the app resizes anyway when the device opens or closes.
+- Orientation locks: talk 111461 says both that the inner display doesn't honor supported orientations and that
+  locked apps are scaled there. Either way, don't rely on the lock. Don't branch
+  layout on <code>userInterfaceIdiom</code> or interface orientation. Use size classes with automatic trait tracking.
+- Orientation doesn't give the app's shape. Remove layout logic based on <code>UIDevice.current.orientation</code>,
+  <code>statusBarOrientation</code>, or <code>interfaceOrientation</code> (including <code>windowScene.effectiveGeometry.interfaceOrientation</code>);
+  to know whether the app is wider than tall, compare the width and height of the space you have.
+- Size classes don't identify the device: with iPhone Duo and resizable iPhone Mirroring, an iPhone app can get any
+  combination. Code that shows an iPad-only layout at regular width, or assumes iPhone is always compact, now runs
+  that layout on iPhone too, so make sure it works there (Apple: the inner display should look like a natural
+  extension of the iPad layout). Drop comparisons with known iPhone sizes (<code>bounds.height == 844</code>); none match.
+- Full-bleed media (<code>.scaleAspectFill</code>, <code>.aspectRatio(contentMode: .fill)</code>) can lose important content on the wider
+  displays. Choose fill or fit from the size classes or aspect ratio, or set a focal point.
+- Safe-area insets differ per side. Use <code>bounds.inset(by: safeAreaInsets)</code>, not <code>width - insets.left * 2</code>.
+- Corners: <code>ConcentricRectangle</code> (SwiftUI) and <code>UICornerConfiguration</code> (UIKit) follow the new screen shapes.</p>
+<p><strong>Bars</strong>
+- Only bars owned by a container go vertical: SwiftUI <code>.toolbar</code> on content inside <code>NavigationStack</code>,
+  <code>NavigationSplitView</code>, or <code>TabView</code>; UIKit items on a view controller inside a <code>UINavigationController</code> /
+  <code>UITabBarController</code>. Content of a custom <code>UIToolbar</code>, <code>UINavigationBar</code>, or <code>UITabBar</code> is ignored.
+- Split views: only the detail column's bars go vertical; sidebar and content columns stay horizontal.
+  Inspectors stay horizontal. Sheets on the outer display go vertical by default. On the inner display, only
+  trailing sheets do (<code>presentationPlacement(_:)</code> / <code>UISheetPresentationController.preferredPlacement</code>).
+- Top of the side bar: custom Back/Close as <code>ToolbarItem(placement: .cancellationAction)</code> or UIKit
+  <code>leadingItemGroups</code> with <code>leftItemsSupplementBackButton = false</code>; prominent actions (Done) as
+  <code>.topBarPinnedTrailing</code> or <code>UINavigationItem.pinnedTrailingGroup</code>.
+- The side bar uses the icon; horizontal bars prefer the icon; overflow uses icon and title. Title-only
+  items and custom views stay horizontal unless opted in with <code>axisBehavior(.verticalPreferred)</code>. Use
+  <code>.horizontalOnly</code> for items whose text carries meaning (a cart total, a Select/Done toggle).
+- Flexible spacers are zero-size vertically; fixed spacers keep their size. Don't add spacing.
+- Show counts with <code>.badge(_:)</code> / <code>UIBarButtonItem.badge = .count(n)</code>.
+- Under Reduce Transparency the side bar gets a background; keep custom content legible.
+- Disable side bars (<code>.toolbarVerticalBehavior(.disabled)</code> / override <code>preferredVerticalBarBehavior</code> to return
+  <code>.disabled</code>) only for immersive single-purpose UIs such as a calculator, a full-screen player, or a sheet with a
+  single button. Treat it as a fixed choice, not something that toggles with view state.
+- Custom views that must adapt to the side bar read <code>@Environment(\.toolbarVerticalEdge)</code> (<code>HorizontalEdge?</code>) or
+  <code>traitCollection.verticalBarEdge</code> (<code>.leading</code>, <code>.trailing</code>, <code>.unspecified</code>). It's the direct signal for "are the
+  bars vertical right now", better than size class or orientation (Apple DTS): the outer display stays compact
+  width in both orientations.
+- Hero or background images extend under the side bar with <code>backgroundExtensionEffect()</code> / <code>UIBackgroundExtensionView</code>.
+- Information-dense apps can show the tab bar as a sidebar on the inner display:
+  <code>TabView { … }.tabViewStyle(.sidebarAdaptable).defaultTabBarPlacement(.sidebar)</code> (27.0; takes an
+  <code>AdaptableTabBarPlacement</code>) / <code>tabBarController.sidebar.preferredPlacement = .sidebar</code>.</p>
+<p><strong>Displacement and poses</strong>
+- When the fold would cover something, move the smallest meaningful scope and move related elements together.
+- Continuous scrolling content (feeds, articles, lists) doesn't need to avoid the fold.
+- Grids: query inactive divisions (<code>options: .includeInactive</code>) to prefer an even column count whenever a fold
+  exists (talk 111463). Apple DTS doesn't recommend making scrolling grids avoid the fold; there's no automatic fold
+  avoidance in <code>UICollectionView</code>. Adjust only sections that don't scroll across the fold, from the collection
+  view's reserved regions.
+- Poses: the inner display is wider than tall when opened like a book, so <strong>book pose (vertical fold) is landscape</strong>
+  with side bars, and <strong>tabletop / laptop pose (horizontal fold) is portrait</strong> with horizontal bars.
+- Book pose: displaced alerts go to the trailing side. Tabletop pose: the top half suits content viewed from a
+  distance, the bottom half suits controls. A tabletop layout is optional and keeps the same controls.
+- Audit centered layouts: they're what the fold cuts through.
+- Hinge state (<code>onHingeChange</code> / <code>UIHingeInteraction</code>) is for interactions, such as using the hinge angle as an input.
+  Don't drive layout from it, and don't depend on its update rate or precision: both are system policy (Apple DTS).</p>
+<p><strong>Scenes and state</strong>
+- Built with the SDK after iOS 26, an app that hasn't adopted the UIScene life cycle won't launch (TN3187). SwiftUI
+  <code>App</code>s already use scenes; UIKit apps need a <code>UIApplicationSceneManifest</code> or <code>configurationForConnecting</code>.
+- Opening or closing doesn't change <code>scenePhase</code> for a full-screen app: the scene just resizes through size-class
+  and trait changes. With two windows on the inner display, closing keeps the most recent one active and moves the
+  other to inactive, then background (Apple DTS). Keep UI state in the model so it survives resizes.
+- <code>ArrangementView</code> shows only one view when its split axes can't fit the aspect ratio, pose, or compact size
+  class: the one with the higher <code>.layoutPriority</code>, else the primary (Apple DTS). Observe <code>\.splitArrangementAxis</code>
+  and keep the hidden view's actions reachable elsewhere.
+- <code>toolbarVerticalBehavior</code> is resolved per window or presentation (a <code>NavigationStack</code> uses its top view, a
+  <code>TabView</code> its selected tab), so disabling it for one immersive screen belongs on a full-screen cover or sheet.</p>
+<p><strong>Testing</strong>
+- Xcode 27.1 is the released baseline. The <a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes">27.2 RC notes</a>
+  also document Duo simulator support; the earlier beta exclusion is obsolete. Checked 2026-10-26.
+  Poses come from Device Hub; Xcode Previews have a "Display" override for the outer display.
+- In 27.2 RC, captures can stay black for several minutes after boot (187146039). Check the active display and retry
+  after startup. Modifier keys can stop after a display switch; click the visible screen to restore them (189465196).
+- Device Hub cannot expose Duo screen content to VoiceOver or Accessibility Inspector in 27.2 RC (187148389).
+  Verify accessibility directly on hardware; a Device Hub check alone is insufficient.
+- Mac Catalyst compilation can fail for iOS 27.1-specific APIs in 27.2 RC (185924957). Isolate affected code with
+  <code>#if !targetEnvironment(macCatalyst)</code> and keep a Catalyst fallback; runtime availability checks alone won't fix it.
+- Xcode 27.2 defaults to JSON <code>.xcproj</code> project configuration (<a href="https://developer.apple.com/documentation/xcode/updating-your-xcode-project-configuration-file-format">format documentation</a>).
+  The audit reads <code>.pbxproj</code> and <code>.xcproj</code> full-screen settings; JSON projects also contribute scene-generation
+  evidence. Python 3 is required only for <code>.xcproj</code>. It handles Xcode-emitted comments and trailing commas;
+  unsupported JSON5 syntax or malformed input exits 2. Review inherited/conditional settings and <code>.xcconfig</code>
+  values in the actual build; this is a candidate scan, not a build-settings resolver. No migration is needed for Duo.
+- Without the Duo simulator, Apple lists two ways to test resizing: the resizable iOS simulator in Device Hub, and
+  iPhone Mirroring on macOS 27 (drag the window to extreme sizes both ways). They exercise resizing; don't assume
+  they show side bars, the fold, or the cameras. Apple calls the iPhone Duo simulator the best way to test the
+  full native experience.
+- Xcode 27.1's coding assistant ships Apple's own app resizability skill ("get my app ready for iPhone Duo";
+  <code>xcrun agent skills export</code> writes it out for other agents). It scans for the resize patterns above (main screen,
+  orientation, idiom and device-size checks, full-bleed media) and, by Apple's account, doesn't find everything.
+  Use it alongside this skill, which adds the bars, fold, arrangement-view, and camera guidance.
+- Simulator known issues (<a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27_1-release-notes">Xcode 27.1 notes</a>):
+  StandBy unavailable, most app extensions (widgets, Live Activities) can't run or be debugged. Verify those on a device;
+  these restrictions are recorded for 27.1, not asserted for every newer runtime.
+- Screenshots: <code>xcrun simctl io &lt;device&gt; enumerate</code> lists displays; pass <code>screenshot --display=&lt;id&gt;</code> to capture the
+  one in use.</p>
+<p><strong>Cameras and scene accessories:</strong> <a href="cameras-and-scene-accessories.html">cameras-and-scene-accessories.md</a> (tech talks
+111464–111465). <strong>App Store submission:</strong> <a href="shipping.html">shipping.md</a>. <strong>Several windows, Picture in Picture, Core
+Motion, widgets, web content, accessibility:</strong> <a href="system-behaviors.html">system-behaviors.md</a>.
+Don't hard-code "Face ID" in UI text; read <code>LAContext().biometryType</code>.</p>
+<h2 id="6-api-reference">6. API reference</h2>
+<p>Checked against Apple's developer docs on 2026-10-21. <strong>iOS 27.1</strong> (final release in Xcode 27.1) unless noted. Guard with
+<code>if #available(iOS 27.1, *)</code> when the deployment target is lower.</p>
+<p><strong>Reserved regions</strong>
+- SwiftUI: <code>GeometryProxy.reservedRegions(kind: ReservedRegion.Kind, options: ReservedRegion.QueryOptions = [],
+  layoutDirectionBehavior: LayoutDirectionBehavior = .mirrors) -&gt; [ReservedRegion]</code>, called inside a <code>GeometryReader</code>.
+- UIKit: <code>UIView.reservedRegions(kind: UIView.ReservedRegion.Kind, options: UIView.ReservedRegion.QueryOptions = [])
+  -&gt; [UIView.ReservedRegion]</code>.
+- Region properties: <code>frame</code> (includes margins), <code>margins</code>, <code>isActive</code>, <code>kind</code>, <code>id</code>. Kinds: <code>.division</code>,
+  <code>.occlusion</code>. Options: <code>.includeInactive</code> (active regions only by default, per <code>QueryOptions</code> and talk 111463;
+  the <code>ReservedRegion</code> overview's "regardless of whether they are currently active" contradicts both). The fold is
+  active only while partially folded; when flat it's inactive with zero width.</p>
+<p><strong>Arrangement views</strong>
+- SwiftUI: <code>ArrangementView&lt;Primary, Secondary&gt;</code>, written <code>ArrangementView { Primary() } secondary: { Secondary() }</code>.
+  Style with <code>.arrangementViewStyle(_:)</code>: <code>.automatic</code> (resolves to split), <code>.split</code>, <code>.overlay</code>; limit axes with
+  <code>.split.axes(.horizontal)</code> / <code>.overlay.axes(_:)</code>. Custom styles conform to <code>ArrangementViewStyle</code>.
+- Split sizing: <code>.splitArrangementLayoutRatio(_:)</code>, <code>.splitArrangementLayoutSize(minWidth:…)</code>,
+  <code>.splitArrangementFixedLayoutSize(horizontal:vertical:)</code>. Overlay: <code>.overlayArrangementEdge(_:)</code> picks the
+  horizontal edge a view takes when side by side.
+- Environment: <code>\.overlayArrangementZIndex</code> (<code>Int</code>; greater than 0 means this view is drawn on top, so it can
+  collapse itself, as talk 111463 does with an Up Next queue placed in the primary slot), <code>\.splitArrangementAxis</code>.
+- UIKit: <code>UIArrangementViewController()</code>; <code>setViewController(_:for: .primary / .secondary, animated:)</code>;
+  <code>updateArrangement(_:animated:)</code> with <code>UISplitArrangement</code> (default) or <code>UIOverlayArrangement</code>, e.g.
+  <code>.split.axes(.horizontal)</code>; <code>state(for:)</code> returns a <code>ViewState?</code> with <code>isHidden</code>, <code>splitAxis</code>, <code>zIndex</code>.</p>
+<p><strong>Hinge</strong>
+- SwiftUI: <code>.onHingeChange(isEnabled:_:)</code> with <code>(DeviceHingeContext, DeviceHingeContext)</code>; <code>context.hinge</code> is a
+  <code>DeviceHinge?</code> (nil without a hinge) with <code>angle</code> and <code>status</code> (<code>.closed</code>, <code>.partiallyOpen</code>, <code>.fullyOpen</code>).
+- UIKit: <code>UIHingeInteraction(updateHandler:)</code> added with <code>addInteraction(_:)</code>; <code>update.hinge</code> is a <code>UIHinge?</code> with
+  <code>angle</code> (radians) and <code>status</code> (adds <code>.unknown</code>).</p>
+<p><strong>Bars</strong>
+| Purpose | SwiftUI | UIKit |
+|---|---|---|
+| Overflow order | <code>ToolbarContent.visibilityPriority(_:)</code> (27.0) | <code>UIBarButtonItem.visibilityPriority</code> (27.0) |
+| Explicit overflow items | <code>ToolbarOverflowMenu { … }</code> (27.0) | <code>UINavigationItem.additionalOverflowItems</code> (16.0) |
+| Vertical eligibility | <code>ToolbarContent.axisBehavior(_:)</code>: <code>.automatic</code>, <code>.horizontalOnly</code>, <code>.verticalPreferred</code> | <code>UIBarButtonItem.axisBehavior</code> (same cases) |
+| Tab bar vs items | <code>.toolbarVerticalCompressionBehavior(_:)</code>: <code>.automatic</code>, <code>.prefersTabBar</code>, <code>.prefersToolbarItems</code> | <code>UINavigationItem.verticalBarCompressionBehavior</code>: <code>.automatic</code>, <code>.prefersTabBar</code>, <code>.prefersBarItems</code> |
+| Opt out of side bars | <code>.toolbarVerticalBehavior(_:)</code>: <code>.automatic</code>, <code>.disabled</code> | <code>UIViewController.preferredVerticalBarBehavior</code> (override) |
+| Which edge | <code>EnvironmentValues.toolbarVerticalEdge</code> | <code>UITraitCollection.verticalBarEdge</code> |
+| Pinned prominent action | <code>ToolbarItemPlacement.topBarPinnedTrailing</code> (27.0) | <code>UINavigationItem.pinnedTrailingGroup</code> (16.0) |
+| Sheet placement | <code>.presentationPlacement(_:)</code> (27.0) | <code>UISheetPresentationController.preferredPlacement</code> (27.0) |</p>
+<p>No group-level visibility priority is documented on <code>UIBarButtonItemGroup</code>; set it on each item.
+<code>additionalOverflowItems</code> is a <code>UIDeferredMenuElement?</code>; setting it shows the overflow button.</p>
+<p>Also confirmed by the HIG: <code>NavigationSplitView</code>, <code>UISplitViewController</code>, <code>ToolbarItemGroup</code>,
+<code>UIBarButtonItemGroup</code>, <code>Label</code>, <code>UIBarButtonItem</code>, <code>GeometryProxy.safeAreaInsets</code>, <code>UIView.safeAreaInsets</code>.
+Anything else Duo-specific: look it up in the SDK and never guess.</p>
+<h2 id="7-code-patterns">7. Code patterns</h2>
+<p>Uncompiled sketches built only from the APIs in §6. Adapt names to the project.</p>
+<p><strong>UIKit bars.</strong> Title + image, groups instead of spacers, extras in the system overflow. Bottom-bar actions stay
+toolbar items (<code>toolbarItems</code>); top-bar actions stay navigation items.</p>
+<pre><code class="language-swift">// UIKit: title + image, groups instead of spacers, extras in the system overflow.
+let compose = UIBarButtonItem(title: &quot;Compose&quot;, image: UIImage(systemName: &quot;square.and.pencil&quot;),
+                              primaryAction: UIAction { [weak self] _ in self?.compose() }, menu: nil)
+compose.visibilityPriority = .high
+navigationItem.trailingItemGroups = [UIBarButtonItemGroup(barButtonItems: [compose], representativeItem: nil)]
+navigationItem.additionalOverflowItems = UIDeferredMenuElement.uncached { done in
+    done([UIAction(title: &quot;Print&quot;, image: UIImage(systemName: &quot;printer&quot;)) { _ in }])
+}
+let arrangement = UIArrangementViewController()   // root of a UINavigationController; .secondary works the same
+arrangement.setViewController(PlayerViewController(), for: .primary)
+</code></pre>
+<p><strong>Fold-aware custom layout (UIKit).</strong> Regions are in this view's coordinates. Re-read them on every layout pass;
+no change callback is documented.</p>
+<pre><code class="language-swift">override func layoutSubviews() {
+    super.layoutSubviews()
+    let safe = bounds.inset(by: safeAreaInsets)
+    var target = safe                                          // where the palette group may sit
+    if #available(iOS 27.1, *) {
+        // Active fold only: nothing moves while the device is flat.
+        // Filter isActive too: one doc overview says inactive regions can be returned by default.
+        if let fold = reservedRegions(kind: .division).first(where: \.isActive)?.frame {
+            if fold.height &gt;= fold.width {                     // vertical fold (book pose): use the trailing half
+                target = CGRect(x: fold.maxX, y: safe.minY, width: safe.maxX - fold.maxX, height: safe.height)
+            } else {                                           // horizontal fold (tabletop): controls go below
+                target = CGRect(x: safe.minX, y: fold.maxY, width: safe.width, height: safe.maxY - fold.maxY)
+            }
+        }
+    }
+    palette.center = CGPoint(x: target.midX, y: target.midY)  // move the whole group together
+    // Also keep `palette.frame` clear of reservedRegions(kind: .occlusion) (cameras) the same way.
+}
+</code></pre>
+<p><strong>Even-column grid (UIKit compositional layout).</strong></p>
+<pre><code class="language-swift">func columnCount(for width: CGFloat, minItemWidth: CGFloat = 100, spacing: CGFloat = 2) -&gt; Int {
+    var count = max(1, Int((width + spacing) / (minItemWidth + spacing)))
+    if #available(iOS 27.1, *),
+       !collectionView.reservedRegions(kind: .division, options: .includeInactive).isEmpty,
+       count &gt; 1, count % 2 == 1 {
+        count += 1                                            // the fold falls between two columns
+    }
+    return count
+}
+// Width: collectionView.bounds.inset(by: collectionView.safeAreaInsets).width, per side, never left * 2.
+// Rebuild the layout when the width or size class changes (viewDidLayoutSubviews / registerForTraitChanges).
+// The grid scrolls, so it doesn't need to avoid the fold: even columns are enough (Apple DTS).
+</code></pre>
+<p><strong>SwiftUI.</strong> Read regions inside a <code>GeometryReader</code> (<code>proxy.reservedRegions(kind: .division)</code>) or pass them to a
+custom <code>Layout</code>; they're mirrored for right-to-left by default (<code>layoutDirectionBehavior: .fixed</code> to opt out).</p></main>
+<footer class="site-footer section-shell"><span>Independent developer guide · Not affiliated with Apple</span><a href="../sources.html">Sources & methodology ↗</a></footer></body></html>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Shipping an iPhone Duo app — Duo Field Guide</title><meta name="description" content="Prepare an iPhone Duo app for release with guidance on testing, SDK compatibility, screenshots, and submission."><meta property="og:type" content="website"><meta property="og:site_name" content="Duo Field Guide"><meta property="og:title" content="Shipping an iPhone Duo app — Duo Field Guide"><meta property="og:description" content="Prepare an iPhone Duo app for release with guidance on testing, SDK compatibility, screenshots, and submission."><meta name="twitter:card" content="summary"><link rel="stylesheet" href="../palette.css?v=9"><link rel="stylesheet" href="../styles.css?v=9"><link rel="stylesheet" href="../refinement.css?v=9"><link rel="stylesheet" href="../guide-nav.css?v=9"><script src="../navigation.js" defer></script></head>
+<body><a class="skip-link" href="#article">Skip to article</a><header class="site-header"><div class="header-inner"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span><strong>duo</strong><span class="brand-divider"></span><span>Developer guide</span></a><a class="header-link" href="../index.html#explore">Back to the explorer ↗</a></div></header>
+<main class="article-shell" id="article"><p class="article-kicker">THE DEVELOPER EDITION / REVIEWED 26 OCT 2026</p><h1 id="shipping-an-iphone-duo-app-to-the-app-store">Shipping an iPhone Duo app to the App Store</h1>
+<p>Source: Apple's news post <a href="https://developer.apple.com/news/?id=kkphp5qo">Prepare and submit your apps for iPhone Duo</a>
+(2026-10-05), its <a href="https://developer.apple.com/iphone-duo/prepare/">Three steps</a> checklist, and the App Store
+Connect help pages, checked 2026-10-26. Read this only when the user asks about submission. Back to the <a href="apple-hig-designing-for-iphone-duo.html">main reference</a>.</p>
+<ul>
+<li><strong>Dates.</strong> iPhone Duo is available to customers from <strong>October 23, 2026</strong>. Apps and games optimized for it can be
+  submitted in App Store Connect now. <strong>Starting April 2027, every app submitted using the iOS 27.1 SDK or later must
+  include iPhone Duo screenshots.</strong> The screenshot specifications page confirms this requirement ("Starting in April
+  2027, screenshots will be required for any app using the iOS 27.1 SDK or later").</li>
+<li><strong>Build.</strong> The device runs iOS 27.1 at launch. Recompile with Xcode 27.1 (released October 2026), which adds iPhone Duo development support
+  (updated SDKs and a simulator with the new poses and orientations). "Optimized for iPhone Duo" means built with
+  the iOS 27.1 SDK or later; older builds still run, in less of the display (table in the main reference, §5).
+  Figma and Sketch design kits are in <a href="https://developer.apple.com/design/resources/">Apple Design Resources</a>. Use
+  Device Hub to see every pose and orientation. See Apple's <a href="https://developer.apple.com/iphone-duo/">Duo hub</a> for
+  upcoming workshops and Group Lab replays; the October 13 and 15 sessions have passed.</li>
+<li><strong>Screenshots</strong> (<code>.jpeg</code>, <code>.jpg</code>, <code>.png</code>; 1 to 10 per device size). Outer display 1398 × 2034 portrait or
+  2034 × 1398 landscape; inner display 2007 × 2853 portrait or 2853 × 2007 landscape. Capture them from the right
+  display: <code>simctl io &lt;device&gt; enumerate</code>, then <code>screenshot --display=&lt;id&gt;</code>, and use the pose each screenshot is meant
+  to show (outer for the compact layout, inner landscape for list + detail).</li>
+<li><strong>App previews</strong> (15 to 30 seconds; up to 3 per device size and language; <code>.mov</code>, <code>.m4v</code>, <code>.mp4</code>, H.264; 500 MB
+  max). Accepted sizes 886 × 1920 portrait or 1920 × 886 landscape. Device resolutions are 2034 × 1398 and
+  2853 × 2007 (19.5:9).</li>
+<li><strong>Product page.</strong> There are new product page header and search-result assets, and templates and guidance at
+  <a href="https://developer.apple.com/app-store/asset-best-practices/">asset best practices</a>. Their sizes aren't
+  Duo-specific: see the <a href="https://developer.apple.com/help/app-store-connect/reference/app-information/creative-assets-specifications">creative assets specifications</a>.
+  App Store Connect has a preview tool that shows how screenshots, headers, and other metadata look on iPhone Duo
+  (with Dark Mode and orientations), and an Asset Library for uploading assets ahead of use.</li>
+<li><strong>Product page badge.</strong> Apple's official iPhone Duo prepare page confirms: when you submit iPhone Duo screenshots
+  in App Store Connect, your App Store product page will display a badge to let people know your app is optimized for
+  iPhone Duo.</li>
+<li><strong>Featuring.</strong> Submit a featuring nomination in App Store Connect; its Helpful Details section lets you say the app
+  is optimized for iPhone Duo, including support for all device poses.</li>
+<li>Capture screenshots from the adapted layout (not a scaled iPhone screenshot), with real content and nothing
+  under the camera or fold.</li>
+<li>Links: <a href="https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications">screenshot specs</a>,
+  <a href="https://developer.apple.com/help/app-store-connect/reference/app-information/app-preview-specifications">app preview specs</a>,
+  <a href="https://developer.apple.com/help/app-store-connect/manage-app-information/manage-your-app-store-assets">manage assets</a>,
+  <a href="https://developer.apple.com/app-store/submitting/">submitting</a>.</li>
+</ul></main>
+<footer class="site-footer section-shell"><span>Independent developer guide · Not affiliated with Apple</span><a href="../sources.html">Sources & methodology ↗</a></footer></body></html>
