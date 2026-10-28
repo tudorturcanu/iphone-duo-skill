@@ -124,6 +124,20 @@
         "Does not invent an Info.plist key, build setting, or API that makes an older-SDK build fill the display",
         "Recommends resize work that pays off on any SDK (size from the view or scene instead of UIScreen.main, no orientation, idiom, or device-size checks)"
       ]
+    },
+    {
+      "id": 8,
+      "prompt": "We're testing our adapted app in Xcode 27.2 RC. Duo screenshots are black immediately after boot, VoiceOver can't read the screen through Device Hub, and our camera accessory used to show on both displays without capture in 27.1. Is this an app regression? We also share code with Mac Catalyst. What should we check before changing our app?",
+      "expected_output": "Distinguishes documented tooling limitations from app regressions, allows boot time and checks the display for captures, requires physical-device accessibility verification, identifies the camera accessory simulator fix, and explains the Catalyst build-time workaround without rewriting unrelated app code.",
+      "files": [],
+      "expectations": [
+        "Recognizes that Xcode 27.2 RC supports the Duo simulator; does not repeat the earlier beta exclusion",
+        "Explains that captures can be black for several minutes after boot and checks the selected display instead of declaring the app broken or always blaming the other display",
+        "Identifies the Device Hub accessibility limitation and recommends testing VoiceOver directly on a physical device",
+        "Explains that camera accessories require active capture and that the 27.1 simulator behavior was a bug fixed in 27.2 RC, not permission to display arbitrary outer-screen content",
+        "Mentions the known Mac Catalyst compile errors for iOS 27.1 APIs and build-time isolation with #if !targetEnvironment(macCatalyst), preserving a fallback",
+        "Does not claim that the app passed testing, or change app code solely to work around a documented tool limitation"
+      ]
     }
   ]
 }

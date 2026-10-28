@@ -75,6 +75,8 @@ registration = registerSceneAccessory(accessory)   // UISceneAccessoryRegistrati
 - Treat it as an **enhancement**: the system decides when and where to present it and can withdraw it any time. Presented
   only while the device is open, the app is in the foreground, and a capture session runs. The capture interface must
   work fully without it, and essential controls stay there. Hide outer-display controls when it isn't available.
+- Xcode 27.1's simulator incorrectly allowed both displays without active capture; 27.2 RC fixes this (190155353).
+  Don't rely on that simulator behavior. See the [release notes](https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes), checked 2026-10-26.
 - You declare a kind of content and pass no display, session, or camera; the system finds the capture session.
 - Share state by giving both sides the same model object (SwiftUI closure capture, or `userInfo` read back from
   `connectionOptions.sceneAccessoryUserInfo` in the scene delegate). Hold a strong reference; keep persistent state in the model.

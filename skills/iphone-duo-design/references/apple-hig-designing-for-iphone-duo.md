@@ -8,12 +8,12 @@ text or images. Read the sources for exact wording and diagrams:
 
 - HIG article: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
   (Markdown version: https://developer.apple.com/tutorials/data/design/human-interface-guidelines/designing-for-iphone-duo.md).
-  Last checked against the source on 2026-10-21. Tracked by section hashes in `tests/hig-duo.sha256`.
-  Re-read in full on 2026-10-21: every point summarized here matches. It names the
+  Last checked against the source on 2026-10-26. Tracked by section hashes in `tests/hig-duo.sha256`.
+  Re-read in full on 2026-10-26 after five sections drifted: the summarized design guidance still matches. It names the
   reserved-region, arrangement-view, and compression APIs and links the screenshot specifications.
 - Developer article: https://developer.apple.com/documentation/technologyoverviews/preparing-your-app-for-iphone-duo
 - Apple's checklist: [Three steps to make your app shine on iPhone Duo](https://developer.apple.com/iphone-duo/prepare/)
-  (SDK tiers, resize patterns to fix, testing tools, product page badge). Checked 2026-10-21; summarized in §5.
+  (SDK tiers, resize patterns to fix, testing tools, product page badge). Checked 2026-10-26; summarized in §5.
 - Related: [Designing for iOS](https://developer.apple.com/design/human-interface-guidelines/designing-for-ios),
   [Layout](https://developer.apple.com/design/human-interface-guidelines/layout),
   [Split views](https://developer.apple.com/design/human-interface-guidelines/split-views),
@@ -202,7 +202,7 @@ Rules:
 ## 5. Beyond the HIG: developer article and tech talks
 
 **Build and screens**
-- Build with the latest Xcode (iOS 27.1 SDK). What each SDK gets on iPhone Duo (Apple's "Three steps" page):
+- Build with a Duo-capable Xcode (iOS 27.1 SDK or later). What each SDK gets on iPhone Duo (Apple's "Three steps" page):
 
   | Built with | Open (inner display) | Closed (outer display) |
   |---|---|---|
@@ -290,8 +290,20 @@ Rules:
   `TabView` its selected tab), so disabling it for one immersive screen belongs on a full-screen cover or sheet.
 
 **Testing**
-- iPhone Duo SDK and simulator: Xcode 27.1 only (released October 2026; the 27.2 beta notes say to use 27.1). Poses come from Device
-  Hub; Xcode Previews have a "Display" override for the outer display.
+- Xcode 27.1 is the released baseline. The [27.2 RC notes](https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes)
+  also document Duo simulator support; the earlier beta exclusion is obsolete. Checked 2026-10-26.
+  Poses come from Device Hub; Xcode Previews have a "Display" override for the outer display.
+- In 27.2 RC, captures can stay black for several minutes after boot (187146039). Check the active display and retry
+  after startup. Modifier keys can stop after a display switch; click the visible screen to restore them (189465196).
+- Device Hub cannot expose Duo screen content to VoiceOver or Accessibility Inspector in 27.2 RC (187148389).
+  Verify accessibility directly on hardware; a Device Hub check alone is insufficient.
+- Mac Catalyst compilation can fail for iOS 27.1-specific APIs in 27.2 RC (185924957). Isolate affected code with
+  `#if !targetEnvironment(macCatalyst)` and keep a Catalyst fallback; runtime availability checks alone won't fix it.
+- Xcode 27.2 defaults to JSON `.xcproj` project configuration ([format documentation](https://developer.apple.com/documentation/xcode/updating-your-xcode-project-configuration-file-format)).
+  The audit reads `.pbxproj` and `.xcproj` full-screen settings; JSON projects also contribute scene-generation
+  evidence. Python 3 is required only for `.xcproj`. It handles Xcode-emitted comments and trailing commas;
+  unsupported JSON5 syntax or malformed input exits 2. Review inherited/conditional settings and `.xcconfig`
+  values in the actual build; this is a candidate scan, not a build-settings resolver. No migration is needed for Duo.
 - Without the Duo simulator, Apple lists two ways to test resizing: the resizable iOS simulator in Device Hub, and
   iPhone Mirroring on macOS 27 (drag the window to extreme sizes both ways). They exercise resizing; don't assume
   they show side bars, the fold, or the cameras. Apple calls the iPhone Duo simulator the best way to test the
@@ -300,8 +312,9 @@ Rules:
   `xcrun agent skills export` writes it out for other agents). It scans for the resize patterns above (main screen,
   orientation, idiom and device-size checks, full-bleed media) and, by Apple's account, doesn't find everything.
   Use it alongside this skill, which adds the bars, fold, arrangement-view, and camera guidance.
-- Simulator known issues (Xcode 27.1 notes): StandBy unavailable, most app extensions (widgets, Live Activities)
-  can't run or be debugged. Verify those on a device.
+- Simulator known issues ([Xcode 27.1 notes](https://developer.apple.com/documentation/xcode-release-notes/xcode-27_1-release-notes)):
+  StandBy unavailable, most app extensions (widgets, Live Activities) can't run or be debugged. Verify those on a device;
+  these restrictions are recorded for 27.1, not asserted for every newer runtime.
 - Screenshots: `xcrun simctl io <device> enumerate` lists displays; pass `screenshot --display=<id>` to capture the
   one in use.
 

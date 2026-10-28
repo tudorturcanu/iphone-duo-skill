@@ -1,6 +1,6 @@
 name: HIG drift
 
-# Apple's "Designing for iPhone Duo" article and the iOS 27.1 beta APIs are new and will change. These jobs fail
+# Apple's "Designing for iPhone Duo" article and the iOS 27.1 APIs can change. These jobs fail
 # when they do, so references/ and SKILL.md get re-checked. The launch sources (news post, App Store Connect
 # specs, Xcode status, the "Three steps" prepare page) are compared by a few facts. Only hashes, section headings,
 # numbers, and availability metadata are stored, never Apple's text.
@@ -32,5 +32,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Launch news, App Store specs, and Xcode status still match references/shipping.md
+      - name: Launch news, App Store specs, and Xcode release status and issues still match the references
         run: python3 tests/check_apple_sources.py

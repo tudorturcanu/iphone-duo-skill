@@ -23,6 +23,9 @@ jobs:
       - name: shellcheck
         run: shellcheck skills/iphone-duo-design/scripts/*.sh
 
+      - name: Offline source-check and JSON project audit regressions
+        run: python3 -m unittest discover -s tests -p 'test_*.py'
+
       - name: SKILL.md frontmatter and size
         run: |
           python3 - <<'PY'

@@ -20,6 +20,7 @@ TARGET_DIR="."
 QUIET=0
 SUMMARY=0
 MAX=5
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -71,7 +72,8 @@ CHECKS=(
 )
 
 SWIFT=$(mktemp); EXTRA=$(mktemp); ALL_MATCHES=$(mktemp); CAT=$(mktemp); LIST=$(mktemp); FILES=$(mktemp); FLAGGED=$(mktemp)
-trap 'rm -f "$SWIFT" "$EXTRA" "$ALL_MATCHES" "$CAT" "$LIST" "$FILES" "$FLAGGED"' EXIT
+JSON_FILES=$(mktemp); JSON_MATCHES=$(mktemp)
+trap 'rm -f "$SWIFT" "$EXTRA" "$ALL_MATCHES" "$CAT" "$LIST" "$FILES" "$FLAGGED" "$JSON_FILES" "$JSON_MATCHES"' EXIT
 
 ALL=()
 for c in "${CHECKS[@]}"; do
@@ -84,7 +86,7 @@ PRUNE=(Pods Carthage .build DerivedData node_modules .git .swiftpm)
 # A wrong path must not look like a clean app.
 PRUNE_EXPR=()
 for d in "${PRUNE[@]}"; do PRUNE_EXPR+=(-name "$d" -o); done
-if [ -z "$(find "$TARGET_DIR" \( "${PRUNE_EXPR[@]}" -false \) -prune -o \( -name '*.swift' -o -name project.pbxproj \) -type f -print 2>/dev/null | head -1)" ]; then
+if [ -z "$(find "$TARGET_DIR" \( "${PRUNE_EXPR[@]}" -false \) -prune -o \( -name '*.swift' -o -name project.pbxproj -o -name '*.xcproj' \) -type f -print 2>/dev/null | head -1)" ]; then
     echo "Error: no Swift files or Xcode projects under '$TARGET_DIR'. Pass the app's source folder." >&2
     exit 2
 fi
@@ -167,9 +169,22 @@ full_screen_opt_out() {
     ' < "$LIST"
 }
 
+# Xcode JSON projects need structured parsing: strings and comments may mention settings.
+json_project_settings() {
+    find . \( "${PRUNE_EXPR[@]}" -false \) -prune -o -name '*.xcproj' -type f -print0 > "$JSON_FILES" || return 2
+    [ -s "$JSON_FILES" ] || return 0
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo 'Error: Python 3 is required to audit .xcproj settings. Review them manually; the audit is incomplete.' >&2
+        return 2
+    fi
+    xargs -0 python3 "$SCRIPT_DIR/audit_xcproj.py" < "$JSON_FILES" > "$JSON_MATCHES" || return 2
+    grep -E ' \[UIRequiresFullScreen\]$' "$JSON_MATCHES" || [ $? -eq 1 ] || return 2
+}
+
 # A UIKit app delegate with no scene configuration anywhere: UIScene is required from the iOS 27 SDK (TN3187).
 # SwiftUI `App` structs, a scene manifest in Info.plist / build settings, or configurationForConnecting all count.
 scene_life_cycle() {
+    if grep -qE ' \[UIScene configured\]$' "$JSON_MATCHES"; then return 0; fi
     if [ -s "$FILES" ] && xargs -0 grep -lF UIApplicationSceneManifest < "$FILES" 2>/dev/null | grep -q .; then return 0; fi
     local swift_opts=(--include='*.swift' "${GREP_EXCLUDES[@]}" --exclude-dir='*.xcodeproj' --exclude-dir='*.xcworkspace')
     if grep -rqE "${swift_opts[@]}" -e 'configurationForConnecting|:[[:space:]]*App[[:space:]]*\{' . ; then return 0; fi
@@ -185,6 +200,7 @@ set +e
     search_swift > "$SWIFT"; rc=$?; [ "$rc" -le 1 ] || exit "$rc"
     toolbar_context || exit 2
     full_screen_opt_out || exit 2
+    json_project_settings || exit 2
     scene_life_cycle || exit 2
     exit 0
 ) > "$EXTRA"

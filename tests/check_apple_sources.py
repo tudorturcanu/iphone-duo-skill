@@ -31,6 +31,21 @@ def duo_sizes(page):
     return found
 
 
+def release_issue_statuses(markdown):
+    """Map Apple issue IDs to their release-note status, retaining section context."""
+    statuses = {}
+    status = None
+    for line in markdown.splitlines():
+        if line.startswith("### "):
+            status = None
+        elif line.startswith("#### "):
+            status = line[5:].strip()
+        if status:
+            for issue in re.findall(r"\((\d{9})\)", line):
+                statuses[issue] = status
+    return statuses
+
+
 def main():
     problems = []
 
@@ -67,6 +82,24 @@ def main():
     meta = json.loads(get(DEV + "tutorials/data/documentation/xcode-release-notes/xcode-27_1-release-notes.json"))["metadata"]
     if meta.get("title") != "Xcode 27.1 Release Notes":
         problems.append(f"Xcode 27.1 release notes title changed from 'Xcode 27.1 Release Notes' to '{meta.get('title')}': re-check SKILL.md and references/")
+
+    # 27.2 RC replaces the old beta exclusion. Track issue status, not just presence:
+    # a known issue becoming resolved must prompt a review of the testing advice.
+    release_url = DEV + "tutorials/data/documentation/xcode-release-notes/xcode-27_2-release-notes"
+    rc_meta = json.loads(get(release_url + ".json"))["metadata"]
+    if rc_meta.get("title") != "Xcode 27.2 RC Release Notes":
+        problems.append(f"Xcode 27.2 status changed to '{rc_meta.get('title')}': re-check SKILL.md and references/")
+    statuses = release_issue_statuses(get(release_url + ".md"))
+    expected = {
+        "187146039": "Known Issues",     # black captures after boot
+        "187148389": "Known Issues",     # Device Hub accessibility
+        "189465196": "Known Issues",     # modifier keys after display switch
+        "185924957": "Known Issues",     # Mac Catalyst with 27.1 APIs
+        "190155353": "Resolved Issues",  # camera accessory without capture
+    }
+    for issue, status in expected.items():
+        if statuses.get(issue) != status:
+            problems.append(f"Xcode 27.2 issue {issue}: expected '{status}', now '{statuses.get(issue, 'missing')}': re-check references/")
 
     # 5. Apple's "Three steps" page: SDK tiers, Apple's own resizability skill, and the testing tools the skill names.
     prepare = text(get(DEV + "iphone-duo/prepare/"))
