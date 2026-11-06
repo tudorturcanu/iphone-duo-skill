@@ -2,6 +2,39 @@
 
 All notable changes to this skill are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## Unreleased
+
+### Changed
+- Redesigned the field guide and developer lab with a lesson sidebar, compact preview/inspector workspace, restrained typography, and shared reference-page styling. Replaced decorative community cards with a source list and kept all interactive experiments.
+
+### Added
+- Original standalone Mail, Notes, Media, and Layout examples with local draft continuity, functional interactions, synthesized audio, and live web viewport measurements.
+- Interactive developer lab in the Duo Field Guide: five guided experiments, width and region controls, fragile/adaptive comparisons, a developer inspector with Swift patterns and illustrative event traces, state-preservation exercises, and challenge feedback. The lab is explicitly a browser teaching model, with no device measurements or Swift execution implied.
+
+## [1.3.3] - 2026-10-26
+
+Reviewed upstream (still v1.3.2) and Apple's current documentation after device launch.
+
+### Changed
+- Removed the obsolete Xcode 27.2 beta exclusion: the current release notes are for 27.2 RC and document Duo simulator support.
+- Corrected black-capture troubleshooting and accessibility verification; documented the RC's Mac Catalyst workaround and the camera accessory simulator fix. Kept 27.1-only simulator limitations scoped to that runtime.
+- Re-read the HIG after drift in Discussion, Device poses, Best practices, Arrangement views, and Vertical controls. The existing design summary remains accurate; refreshed section hashes and review dates.
+- Marked the October Group Labs as past sessions with links to replays. Corrected the README's outer bar placement to the physical camera edge, including RTL.
+- Audit exit `2` now also covers unreadable JSON project settings and missing Python 3, so an incomplete scan cannot report clean.
+
+### Added
+- An interactive Duo Field Guide in `sites/duo-field-guide`, with six schematic display/pose states, reserved-region controls, Swift examples, the audit tutorial, and a dated developer update snapshot.
+- `docs/COMMUNITY-SOURCES.md` reviews the three requested community repositories at pinned revisions and separates Android inspiration, iOS tooling, and learning notes from Apple platform guidance.
+- A hands-on tutorial in `docs/TUTORIAL.md`, linked from the README, with a temporary Notes practice copy, two SwiftUI fixes, expected audit results, agent prompts, JSON settings guidance, and testing tips.
+- JSON `.xcproj` support for full-screen opt-outs and scene-generation evidence, based on Apple's published project/target schema. Handles conditional keys, string/array values, comments, and trailing commas; reports original source lines. Requires Python 3 only when scanning JSON projects, with no third-party packages or network calls.
+- Integration tests exercise JSON projects with both search backends, including false-positive cases, malformed input, excluded dependencies, missing Python, and read-only behavior. The scanner remains a heuristic; it does not resolve inherited settings or `.xcconfig` files.
+- Weekly checks for the Xcode 27.2 release title and five relevant issue statuses, plus offline regression tests for status changes and section boundaries.
+- An eighth evaluation prompt covering RC testing and camera accessory behavior; not yet benchmarked.
+
+### Verified
+- Full project CI passes, including 13 offline regression tests and all 40 marked audit lines with both ripgrep and grep.
+- All 64 tracked Apple APIs retain their recorded availability. Launch facts, screenshot and preview specifications, and the prepare-page facts are unchanged.
+
 ## [1.3.2] - 2026-10-21
 
 Prompted by the final release of Xcode 27.1 / iOS 27.1, the App Store Connect screenshot specifications

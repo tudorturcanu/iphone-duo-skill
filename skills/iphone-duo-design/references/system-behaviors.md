@@ -84,4 +84,5 @@ motionManager.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: .main) {
   guidelines, and the short outer display makes this more likely: let content scroll.
 - VoiceOver order follows standard containers and grouping. A custom layout that spans the fold may need explicit
   accessibility containers or sort priorities.
-- Test Dynamic Type, contrast, and VoiceOver in each pose with Device Hub.
+- Test Dynamic Type and contrast in each pose. Test VoiceOver directly on a device: Xcode 27.2 RC's Device Hub has an
+  accessibility inspection limitation; see [testing](apple-hig-designing-for-iphone-duo.md#5-beyond-the-hig-developer-article-and-tech-talks).

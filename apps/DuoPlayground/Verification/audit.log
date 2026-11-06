@@ -1,0 +1,6 @@
+iPhone Duo readiness audit: apps/DuoPlayground
+▶ Screen bounds or main screen used (1) — Size from the view or scene; use traitCollection.displayScale. UIScreen.main is ambiguous with two displays.
+    DuoPlayground/Experiment.swift:35: case .continuity: "@State private var model = LabModel()\n\n// Stable owner above the resizing layout.\nWindowGroup {\n    Ro
+▶ Custom bar instead of a system-managed one (1) — Only container-managed bars move to the side. Use TabView / UITabBarController and .toolbar / navigation-controller items.
+    DuoPlayground/ExperimentDetail.swift:23: Button("Go to Workbench", systemImage: "arrow.right") { selectedTab = 0 }
+2 line(s) flagged in 2 categories. Review each in context.

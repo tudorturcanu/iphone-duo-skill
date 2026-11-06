@@ -2,7 +2,7 @@
 
 Source: Apple's news post [Prepare and submit your apps for iPhone Duo](https://developer.apple.com/news/?id=kkphp5qo)
 (2026-10-05), its [Three steps](https://developer.apple.com/iphone-duo/prepare/) checklist, and the App Store
-Connect help pages, checked 2026-10-21. Read this only when the user asks about submission. Back to the [main reference](apple-hig-designing-for-iphone-duo.md).
+Connect help pages, checked 2026-10-26. Read this only when the user asks about submission. Back to the [main reference](apple-hig-designing-for-iphone-duo.md).
 
 - **Dates.** iPhone Duo is available to customers from **October 23, 2026**. Apps and games optimized for it can be
   submitted in App Store Connect now. **Starting April 2027, every app submitted using the iOS 27.1 SDK or later must
@@ -12,8 +12,8 @@ Connect help pages, checked 2026-10-21. Read this only when the user asks about 
   (updated SDKs and a simulator with the new poses and orientations). "Optimized for iPhone Duo" means built with
   the iOS 27.1 SDK or later; older builds still run, in less of the display (table in the main reference, §5).
   Figma and Sketch design kits are in [Apple Design Resources](https://developer.apple.com/design/resources/). Use
-  Device Hub to see every pose and orientation. Apple runs in-person iPhone Duo workshops (more cities added in October) and online Group Labs
-  (October 13 and 15, 2026; earlier sessions are on demand).
+  Device Hub to see every pose and orientation. See Apple's [Duo hub](https://developer.apple.com/iphone-duo/) for
+  upcoming workshops and Group Lab replays; the October 13 and 15 sessions have passed.
 - **Screenshots** (`.jpeg`, `.jpg`, `.png`; 1 to 10 per device size). Outer display 1398 × 2034 portrait or
   2034 × 1398 landscape; inner display 2007 × 2853 portrait or 2853 × 2007 landscape. Capture them from the right
   display: `simctl io <device> enumerate`, then `screenshot --display=<id>`, and use the pose each screenshot is meant

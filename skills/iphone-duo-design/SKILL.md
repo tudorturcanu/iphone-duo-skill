@@ -2,9 +2,9 @@
 name: iphone-duo-design
 description: Adapts, builds, and reviews SwiftUI and UIKit apps for iPhone Duo, Apple's dual-display hinged iPhone (the folding, book-style iPhone with an outer and inner display). Use whenever the user mentions iPhone Duo, a foldable or dual-screen iPhone, the hinge or fold, half-folded, book or tabletop poses, reserved regions, arrangement views, side or vertical toolbars and tab bars on iPhone, or wants an iOS app audited, fixed, specced, or prepared for App Store submission (screenshots, previews) for iPhone Duo, or has a camera app that must follow which way each display's camera faces. Not for Android foldables (Galaxy Z Fold or Flip), Surface Duo, visionOS, external displays, or general iPad multitasking.
 license: MIT
-compatibility: Needs bash; ripgrep optional (falls back to grep). Verifying on a simulator needs Xcode 27.1 (released October 2026; the 27.2 beta lacks the Duo SDK). No network.
+compatibility: Needs bash; ripgrep optional (falls back to grep). JSON .xcproj audits also need Python 3. Duo simulator verification needs Xcode 27.1 or a newer release with Duo support (27.2 RC checked October 2026). No network.
 metadata:
-  version: "1.3.2"
+  version: "1.3.3"
   author: tudorturcanu
 allowed-tools: Read Grep Glob Bash(bash ${CLAUDE_SKILL_DIR}/scripts/audit_duo_readiness.sh *) Bash(xcrun simctl list devicetypes*)
 ---
@@ -29,23 +29,25 @@ Claude Code). When a rule isn't enough: [the reference](references/apple-hig-des
 
 Don't design per pose: a compact plus a regular layout, built on size classes, covers all of them. Reserved regions:
 outer camera (always; grows into the Dynamic Island), inner camera (while active), fold (while partially folded).
-Build with the iOS 27.1 SDK: 27.0 builds get no side bars and stop short of the status-bar edge, and iOS 26 builds
+Build with the iOS 27.1 SDK or later: 27.0 builds get no side bars and stop short of the status-bar edge, and iOS 26 builds
 sit centered on the inner display with empty space around them (closed: beside the status bar and camera).
 
 ## Workflow
 
 1. **Audit.** Run `bash <skill-dir>/scripts/audit_duo_readiness.sh <app-path> -s` for counts, then `-q` for up to
-   5 matches per category (`-n 0` for all). Exit 2 means a bad path or nothing to scan, not a clean app. Fix
+   5 matches per category (`-n 0` for all). Exit 2 means an incomplete audit (input, dependency, or search error). Fix
    launch blockers first: without the UIScene life cycle, an app built with the iOS 27 SDK won't launch (TN3187).
    Read each match in context (a fixed width on an icon is fine, on a container it isn't), then look for what
    grep can't see: controls far from their content, views that jump when the device folds.
+   JSON `.xcproj` settings need Python 3; errors require manual review. Resolve conditional settings in each build.
 2. **Prefer system components** (container-managed bars, split and arrangement views, sheets, menus): they get side
    placement, fold avoidance, and overflow for free. **Apply the rules** below to whatever custom UI remains.
 3. **Verify.** If Xcode is installed, build the project (`xcodebuild … build`) or at least typecheck the changed
-   files (`xcrun --sdk iphonesimulator swiftc -typecheck`); iOS 27.1 APIs need that SDK. Then walk the checklist
-   on the iPhone Duo simulator (`xcrun simctl list devicetypes | grep -i duo`; poses from Device Hub; a black
-   screenshot means the other display: `simctl io <device> enumerate`, then `screenshot --display=`). Widgets, Live
-   Activities, and most extensions don't run there. No Duo simulator: say so; resize in Device Hub or iPhone Mirroring.
+   files (`xcrun --sdk iphonesimulator swiftc -typecheck`); iOS 27.1 APIs need that SDK or later. Walk the checklist
+   on the Duo simulator (`xcrun simctl list devicetypes | grep -i duo`; poses from Device Hub). For black captures,
+   check the active display (`simctl io <device> enumerate`, then `screenshot --display=`) and allow boot time.
+   Tool limitations vary by release; see [testing](references/apple-hig-designing-for-iphone-duo.md#5-beyond-the-hig-developer-article-and-tech-talks).
+   Verify VoiceOver directly on a device. No Duo simulator: say so; resize in Device Hub or iPhone Mirroring.
 4. **Report** what changed, what you verified, and what you couldn't.
 5. **Only if asked:** App Store assets and the April 2027 screenshot requirement: [shipping](references/shipping.md);
    camera apps and outer-display content: [cameras](references/cameras-and-scene-accessories.md); several windows, Picture in Picture, Core Motion, widgets, web, accessibility: [system behaviors](references/system-behaviors.md).
@@ -54,7 +56,6 @@ Scope: change only the app code the user asked about; fix what breaks. Move acti
 features or data sources nobody asked for. React Native / Flutter bars drawn in JS or Dart never move to the side.
 **Design specs** (no code): describe what people see in each pose in plain words, keep it short, and put API names
 in a brief "Implementation notes" section at the end.
-
 > **APIs** (checked against Apple's docs, 2026-10-21). Every API named in this file exists. Fold, arrangement, hinge,
 > and vertical-bar APIs are **iOS 27.1** (final in Xcode 27.1); `visibilityPriority`,
 > `ToolbarOverflowMenu`, `.topBarPinnedTrailing` are 27.0. Guard with `#available` below the deployment target. Signatures are in the reference; anything named in
@@ -147,7 +148,7 @@ NavigationStack {
 
 ## Verification checklist (mark each row verified, fixed, or not verifiable)
 
-- [ ] Built with the iOS 27.1 SDK; no `UIRequiresFullScreen`; audit re-run and remaining hits explained
+- [ ] Built with the iOS 27.1 SDK or later; no `UIRequiresFullScreen`; audit re-run and remaining hits explained
 - [ ] Outer display, portrait & landscape: bars on the side, nothing under the outer camera
 - [ ] Inner portrait: horizontal bars, extra hierarchy level if appropriate; inner landscape: bars on the side
 - [ ] Partially folded: no text or tap targets in the fold, panes balanced, even grid columns, minimal movement
