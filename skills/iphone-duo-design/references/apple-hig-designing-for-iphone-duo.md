@@ -8,12 +8,12 @@ text or images. Read the sources for exact wording and diagrams:
 
 - HIG article: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
   (Markdown version: https://developer.apple.com/tutorials/data/design/human-interface-guidelines/designing-for-iphone-duo.md).
-  Last checked against the source on 2026-10-26. Tracked by section hashes in `tests/hig-duo.sha256`.
-  Re-read in full on 2026-10-26 after five sections drifted: the summarized design guidance still matches. It names the
-  reserved-region, arrangement-view, and compression APIs and links the screenshot specifications.
+  Last checked against the source on 2026-11-02. Tracked by section hashes in `tests/hig-duo.sha256`.
+  Re-read Discussion, Reserved regions, Arrangement views, and Vertical controls after their hashes changed;
+  the summarized design guidance still matches. Implementation-guide drift was also reviewed on 2026-11-02.
 - Developer article: https://developer.apple.com/documentation/technologyoverviews/preparing-your-app-for-iphone-duo
 - Apple's checklist: [Three steps to make your app shine on iPhone Duo](https://developer.apple.com/iphone-duo/prepare/)
-  (SDK tiers, resize patterns to fix, testing tools, product page badge). Checked 2026-10-26; summarized in §5.
+  (SDK tiers, resize patterns to fix, testing tools, product page badge). Checked 2026-11-02; summarized in §5.
 - Related: [Designing for iOS](https://developer.apple.com/design/human-interface-guidelines/designing-for-ios),
   [Layout](https://developer.apple.com/design/human-interface-guidelines/layout),
   [Split views](https://developer.apple.com/design/human-interface-guidelines/split-views),
@@ -290,16 +290,17 @@ Rules:
   `TabView` its selected tab), so disabling it for one immersive screen belongs on a full-screen cover or sheet.
 
 **Testing**
-- Xcode 27.1 is the released baseline. The [27.2 RC notes](https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes)
-  also document Duo simulator support; the earlier beta exclusion is obsolete. Checked 2026-10-26.
+- Xcode 27.1 is the minimum released baseline. [Xcode 27.2](https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes)
+  is now final and supports Duo simulation, including StandBy in Device Hub (189236369). Checked 2026-11-02.
   Poses come from Device Hub; Xcode Previews have a "Display" override for the outer display.
-- In 27.2 RC, captures can stay black for several minutes after boot (187146039). Check the active display and retry
+- In 27.2, captures can stay black for several minutes after boot (187146039). Check the active display and retry
   after startup. Modifier keys can stop after a display switch; click the visible screen to restore them (189465196).
-- Device Hub cannot expose Duo screen content to VoiceOver or Accessibility Inspector in 27.2 RC (187148389).
+- Device Hub cannot expose Duo screen content to VoiceOver or Accessibility Inspector in 27.2 (187148389).
   Verify accessibility directly on hardware; a Device Hub check alone is insufficient.
-- Mac Catalyst compilation can fail for iOS 27.1-specific APIs in 27.2 RC (185924957). Isolate affected code with
+- Mac Catalyst compilation can fail for iOS 27.1-specific APIs in 27.2 (185924957). Isolate affected code with
   `#if !targetEnvironment(macCatalyst)` and keep a Catalyst fallback; runtime availability checks alone won't fix it.
-- Xcode 27.2 defaults to JSON `.xcproj` project configuration ([format documentation](https://developer.apple.com/documentation/xcode/updating-your-xcode-project-configuration-file-format)).
+- New projects in Xcode 27.2 default to JSON `.xcproj` project configuration; existing projects can opt in through
+  the File inspector ([format documentation](https://developer.apple.com/documentation/xcode/updating-your-xcode-project-configuration-file-format)).
   The audit reads `.pbxproj` and `.xcproj` full-screen settings; JSON projects also contribute scene-generation
   evidence. Python 3 is required only for `.xcproj`. It handles Xcode-emitted comments and trailing commas;
   unsupported JSON5 syntax or malformed input exits 2. Review inherited/conditional settings and `.xcconfig`
@@ -325,7 +326,7 @@ Don't hard-code "Face ID" in UI text; read `LAContext().biometryType`.
 
 ## 6. API reference
 
-Checked against Apple's developer docs on 2026-10-21. **iOS 27.1** (final release in Xcode 27.1) unless noted. Guard with
+Checked against Apple's developer docs on 2026-11-02. **iOS 27.1** (final release in Xcode 27.1) unless noted. Guard with
 `if #available(iOS 27.1, *)` when the deployment target is lower.
 
 **Reserved regions**
@@ -333,10 +334,16 @@ Checked against Apple's developer docs on 2026-10-21. **iOS 27.1** (final releas
   layoutDirectionBehavior: LayoutDirectionBehavior = .mirrors) -> [ReservedRegion]`, called inside a `GeometryReader`.
 - UIKit: `UIView.reservedRegions(kind: UIView.ReservedRegion.Kind, options: UIView.ReservedRegion.QueryOptions = [])
   -> [UIView.ReservedRegion]`.
-- Region properties: `frame` (includes margins), `margins`, `isActive`, `kind`, `id`. Kinds: `.division`,
-  `.occlusion`. Options: `.includeInactive` (active regions only by default, per `QueryOptions` and talk 111463;
-  the `ReservedRegion` overview's "regardless of whether they are currently active" contradicts both). The fold is
-  active only while partially folded; when flat it's inactive with zero width.
+- Region properties: `frame` (already includes margins), `margins`, `isActive`, `kind`, `id`. Kinds: `.division`,
+  `.occlusion`. Only overlapping regions return, including partial overlaps: a frame can have negative coordinates
+  or extend beyond the view. Options: `.includeInactive`; otherwise only active regions return. The current overview
+  agrees with the query docs. The fold is inactive when flat; inactive regions still have frames, so don't assume zero size.
+- UIKit reads in `updateConstraints()` are tracked: UIKit calls it again when the regions change. Update the affected
+  constraint constants there and call `super.updateConstraints()` last. For frame-based views, register the reads
+  there and request layout, then compute frames in `layoutSubviews()`. A size change alone isn't a region-change signal.
+  Sources: [UIKit query](https://developer.apple.com/documentation/uikit/uiview/reservedregions(kind:options:)),
+  [UIKit overview](https://developer.apple.com/documentation/uikit/uiview/reservedregion),
+  [SwiftUI overview](https://developer.apple.com/documentation/swiftui/reservedregion).
 
 **Arrangement views**
 - SwiftUI: `ArrangementView<Primary, Secondary>`, written `ArrangementView { Primary() } secondary: { Secondary() }`.
@@ -378,7 +385,9 @@ Anything else Duo-specific: look it up in the SDK and never guess.
 
 ## 7. Code patterns
 
-Uncompiled sketches built only from the APIs in §6. Adapt names to the project.
+Sketches built from the APIs in §6; adapt names to the project. The fold-aware UIView hooks and placement helper
+were typechecked with the iOS 27.1 simulator SDK and an iOS 17 deployment target on 2026-11-03. Geometry tests run
+without a simulator; fold transitions, overflow presentation, and accessibility still need runtime verification.
 
 **UIKit bars.** Title + image, groups instead of spacers, extras in the system overflow. Bottom-bar actions stay
 toolbar items (`toolbarItems`); top-bar actions stay navigation items.
@@ -396,27 +405,49 @@ let arrangement = UIArrangementViewController()   // root of a UINavigationContr
 arrangement.setViewController(PlayerViewController(), for: .primary)
 ```
 
-**Fold-aware custom layout (UIKit).** Regions are in this view's coordinates. Re-read them on every layout pass;
-no change callback is documented.
+**Fold-aware custom layout (UIKit).** Register region reads in `updateConstraints()` so fold and camera changes
+request a layout even when the view doesn't resize. Prefer updating constraint constants there for Auto Layout.
+For frame-based positioning, copy [PalettePlacement.swift](../assets/PalettePlacement.swift) into the app.
+`PalettePlacement` is our sample helper, not an Apple API. It fits the **whole** palette inside the safe bounds and
+outside every supplied region, including frames that extend beyond the view. It preserves the palette's size and
+returns `nil` if it cannot fit. For a tabletop layout, prefer the lower side when there is room.
+
+Call `frameForPalette(of:)` from `layoutSubviews()` after `super`, using the group's measured size. Apply a non-nil
+frame to the entire group. On `nil`, replace the floating group with an accessible system-toolbar or overflow
+presentation containing the same actions; clear the old floating presentation so it cannot remain over the fold.
+Wire that fallback to the app's navigation container. Do not shrink tap targets or silently drop controls.
 
 ```swift
-override func layoutSubviews() {
-    super.layoutSubviews()
-    let safe = bounds.inset(by: safeAreaInsets)
-    var target = safe                                          // where the palette group may sit
+override func didMoveToWindow() {
+    super.didMoveToWindow()
+    setNeedsUpdateConstraints()                // start tracking even in a frame-based view
+}
+
+override func updateConstraints() {
     if #available(iOS 27.1, *) {
-        // Active fold only: nothing moves while the device is flat.
-        // Filter isActive too: one doc overview says inactive regions can be returned by default.
-        if let fold = reservedRegions(kind: .division).first(where: \.isActive)?.frame {
-            if fold.height >= fold.width {                     // vertical fold (book pose): use the trailing half
-                target = CGRect(x: fold.maxX, y: safe.minY, width: safe.maxX - fold.maxX, height: safe.height)
-            } else {                                           // horizontal fold (tabletop): controls go below
-                target = CGRect(x: safe.minX, y: fold.maxY, width: safe.width, height: safe.maxY - fold.maxY)
-            }
-        }
+        _ = reservedRegions(kind: .division)    // tracked reads: rerun when regions change
+        _ = reservedRegions(kind: .occlusion)
+        setNeedsLayout()
     }
-    palette.center = CGPoint(x: target.midX, y: target.midY)  // move the whole group together
-    // Also keep `palette.frame` clear of reservedRegions(kind: .occlusion) (cameras) the same way.
+    super.updateConstraints()                  // must be last
+}
+
+func frameForPalette(of size: CGSize) -> CGRect? {
+    let safe = bounds.inset(by: safeAreaInsets)
+    var divisions: [CGRect] = []
+    var occlusions: [CGRect] = []
+    if #available(iOS 27.1, *) {
+        // Active regions only; frames already include margins and use this view's coordinates.
+        divisions = reservedRegions(kind: .division).map(\.frame)
+        occlusions = reservedRegions(kind: .occlusion).map(\.frame)
+    }
+    let horizontalFold = divisions.first { $0.width > $0.height && $0.intersects(safe) }
+    let lowerArea = horizontalFold.map { fold -> CGRect in
+        let top = min(max(fold.maxY, safe.minY), safe.maxY)
+        return CGRect(x: safe.minX, y: top, width: safe.width, height: safe.maxY - top)
+    }
+    return PalettePlacement.frame(for: size, in: safe,
+                                  avoiding: divisions + occlusions, preferring: lowerArea)
 }
 ```
 
@@ -438,4 +469,8 @@ func columnCount(for width: CGFloat, minItemWidth: CGFloat = 100, spacing: CGFlo
 ```
 
 **SwiftUI.** Read regions inside a `GeometryReader` (`proxy.reservedRegions(kind: .division)`) or pass them to a
-custom `Layout`; they're mirrored for right-to-left by default (`layoutDirectionBehavior: .fixed` to opt out).
+custom `Layout`. Regions use the reader's top-leading origin and are mirrored for right-to-left by default;
+keep that behavior for layouts that mirror automatically. Use `layoutDirectionBehavior: .fixed` for positioning
+that doesn't mirror. A custom `Layout`'s placement bounds may have a nonzero origin: calculate locally from zero,
+then add `bounds.origin` when placing subviews. Don't add region margins twice. See the
+[query documentation](https://developer.apple.com/documentation/swiftui/geometryproxy/reservedregions(kind:options:layoutdirectionbehavior:)).

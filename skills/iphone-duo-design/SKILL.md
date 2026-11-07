@@ -2,9 +2,9 @@
 name: iphone-duo-design
 description: Adapts, builds, and reviews SwiftUI and UIKit apps for iPhone Duo, Apple's dual-display hinged iPhone (the folding, book-style iPhone with an outer and inner display). Use whenever the user mentions iPhone Duo, a foldable or dual-screen iPhone, the hinge or fold, half-folded, book or tabletop poses, reserved regions, arrangement views, side or vertical toolbars and tab bars on iPhone, or wants an iOS app audited, fixed, specced, or prepared for App Store submission (screenshots, previews) for iPhone Duo, or has a camera app that must follow which way each display's camera faces. Not for Android foldables (Galaxy Z Fold or Flip), Surface Duo, visionOS, external displays, or general iPad multitasking.
 license: MIT
-compatibility: Needs bash; ripgrep optional (falls back to grep). JSON .xcproj audits also need Python 3. Duo simulator verification needs Xcode 27.1 or a newer release with Duo support (27.2 RC checked October 2026). No network.
+compatibility: Needs bash; ripgrep optional (falls back to grep). JSON .xcproj audits also need Python 3. Duo simulator verification needs Xcode 27.1 or a newer release with Duo support (27.2 final checked November 2026). No network.
 metadata:
-  version: "1.3.3"
+  version: "1.3.6"
   author: tudorturcanu
 allowed-tools: Read Grep Glob Bash(bash ${CLAUDE_SKILL_DIR}/scripts/audit_duo_readiness.sh *) Bash(xcrun simctl list devicetypes*)
 ---
@@ -56,7 +56,7 @@ Scope: change only the app code the user asked about; fix what breaks. Move acti
 features or data sources nobody asked for. React Native / Flutter bars drawn in JS or Dart never move to the side.
 **Design specs** (no code): describe what people see in each pose in plain words, keep it short, and put API names
 in a brief "Implementation notes" section at the end.
-> **APIs** (checked against Apple's docs, 2026-10-21). Every API named in this file exists. Fold, arrangement, hinge,
+> **APIs** (checked against Apple's docs, 2026-11-02). Every API named in this file exists. Fold, arrangement, hinge,
 > and vertical-bar APIs are **iOS 27.1** (final in Xcode 27.1); `visibilityPriority`,
 > `ToolbarOverflowMenu`, `.topBarPinnedTrailing` are 27.0. Guard with `#available` below the deployment target. Signatures are in the reference; anything named in
 > neither: don't guess, leave a marked `TODO`.
@@ -82,15 +82,15 @@ in a brief "Implementation notes" section at the end.
 **The fold**
 - Prefer self-adapting containers; standard split views balance panes when folded.
 - Custom views: read `reservedRegions(kind: .division)` (fold) and `.occlusion` (cameras) and keep text and tap
-  targets out of each region's `frame` (in the queried view's coordinates; touches there may not register). No change callback is
-  documented, so read them where layout happens (`layoutSubviews`, `viewDidLayoutSubviews`, `GeometryReader`,
-  `onGeometryChange`). Flat → half-folded may not resize the view, so don't claim layout reruns: test it, and if it
-  doesn't, call `setNeedsLayout()` from a `UIHingeInteraction`. Flat, the fold is inactive with zero width. Only active regions return by default; `options: .includeInactive`
-  also returns the fold while the device is flat, so you can plan ahead.
+  targets out of each region's `frame` (queried-view coordinates, margins included; touches there may not register).
+  UIKit: read regions in `updateConstraints()`; UIKit tracks those reads and reruns it when regions change. Update
+  constraints there and call `super.updateConstraints()` last. Frame-based layout can request `setNeedsLayout()`
+  there. SwiftUI: read from `GeometryReader`; match coordinates (reference §7). Flat → half-folded may not resize.
+  Only active regions return by default; `options: .includeInactive` supports planning. Don't assume empty frames or use hinge angle for layout.
 - Grids: compute columns from the width and round up to **even** whenever a division exists (active or not); `.adaptive`
   alone can be odd. Scrolling grids needn't avoid the fold (Apple DTS); adjust only non-scrolling sections around it.
-- On fold, move the smallest meaningful group, and move related elements together. Don't rearrange.
-  Scrolling content (lists, feeds, articles) doesn't need to avoid the fold.
+- On fold, move the smallest meaningful group; fit its full frame inside safe bounds and outside reserved regions.
+  If it cannot fit, keep every action in an accessible overflow presentation. Scrolling content needn't avoid the fold.
 - Tabletop (laptop pose, horizontal fold) layouts are optional: what's read from afar on top (text, video, a timer readout), controls below. Hinge angle is for interactions only.
 
 **Arrangement views**

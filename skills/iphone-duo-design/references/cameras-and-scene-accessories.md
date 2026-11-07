@@ -2,7 +2,7 @@
 
 Original summary of Apple's articles *Choosing a camera by the direction it faces* (AVKit) and *Registering a camera
 capture accessory on iPhone Duo* (AVFoundation), plus tech talks 111464 (multiple displays and scenes) and 111465
-(camera). Checked against Apple's docs on 2026-10-21. Read this only for apps that capture photos or video, or that
+(camera). Checked against Apple's docs on 2026-11-02. Read this only for apps that capture photos or video, or that
 show content across both displays. Back to the [main reference](apple-hig-designing-for-iphone-duo.md).
 
 Availability: `AVCaptureDeviceDirectionCoordinator`, `AVCaptureDeviceDescriptor`, `AVCaptureDeviceDirectionMap`, the
@@ -49,12 +49,17 @@ that faced the same way as your UI can now face the opposite way. `AVCaptureDevi
   it there with `AVCaptureDevice(uniqueID:)`, and handle `nil` (the camera set can change while you dispatch). Don't call
   AVFoundation from the handler.
 - Replace the single video input (`beginConfiguration` / `commitConfiguration`), rather than connecting both cameras in
-  a multicamera session; it's cheaper and covers most apps.
+  a multicamera session; it's cheaper and covers most apps. If the session can't add the replacement, restore the previous input.
 - While switching, frames from the old camera still arrive: mask the preview and unmask after the new device delivers frames.
 - **Mirroring comes from the direction map, not `position`.** Mirror a forward-facing rear camera yourself; show a
   backward-facing front camera unmirrored. Set `automaticallyAdjustsVideoMirroring = false` before assigning
   `isVideoMirrored`, and check `isVideoMirroringSupported` (assigning otherwise raises an exception).
-- Also handle preview aspect ratio, position, and rotation as the device opens and rotates (talk 111465).
+  Reapply the decision on each direction update and after connecting a new device: a new preview connection loses the override.
+- Keep preview and captured media upright with `AVCaptureDevice.RotationCoordinator` (iOS 17.0), using its separate
+  preview and capture angles. Recreate it when switching cameras; each coordinator belongs to one capture device.
+  Also handle preview aspect ratio and position as the device opens and rotates. See
+  [camera direction](https://developer.apple.com/documentation/avkit/choosing-a-camera-by-the-direction-it-faces) and
+  [rotation coordinator](https://developer.apple.com/documentation/avfoundation/avcapturedevice/rotationcoordinator).
 
 ## 3. Showing content on the outer display while capturing (scene accessory)
 
@@ -75,8 +80,8 @@ registration = registerSceneAccessory(accessory)   // UISceneAccessoryRegistrati
 - Treat it as an **enhancement**: the system decides when and where to present it and can withdraw it any time. Presented
   only while the device is open, the app is in the foreground, and a capture session runs. The capture interface must
   work fully without it, and essential controls stay there. Hide outer-display controls when it isn't available.
-- Xcode 27.1's simulator incorrectly allowed both displays without active capture; 27.2 RC fixes this (190155353).
-  Don't rely on that simulator behavior. See the [release notes](https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes), checked 2026-10-26.
+- Xcode 27.1's simulator incorrectly allowed both displays without active capture; 27.2 fixes this (190155353).
+  Don't rely on that simulator behavior. See the [release notes](https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes), checked 2026-11-02.
 - You declare a kind of content and pass no display, session, or camera; the system finds the capture session.
 - Share state by giving both sides the same model object (SwiftUI closure capture, or `userInfo` read back from
   `connectionOptions.sceneAccessoryUserInfo` in the scene delegate). Hold a strong reference; keep persistent state in the model.

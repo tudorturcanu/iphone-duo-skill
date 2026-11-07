@@ -11,6 +11,19 @@ All notable changes to this skill are listed here. Versions follow [Semantic Ver
 - Original standalone Mail, Notes, Media, and Layout examples with local draft continuity, functional interactions, synthesized audio, and live web viewport measurements.
 - Interactive developer lab in the Duo Field Guide: five guided experiments, width and region controls, fragile/adaptive comparisons, a developer inspector with Swift patterns and illustrative event traces, state-preservation exercises, and challenge feedback. The lab is explicitly a browser teaching model, with no device measurements or Swift execution implied.
 
+## [1.3.6] - 2026-11-06
+
+Reviewed against Xcode 27.2 final release and updated Apple guidelines.
+
+### Changed
+- Updated Xcode 27.2 status to final release with confirmed Duo simulation and StandBy in Device Hub.
+- Refined reserved regions guidance: documented UIKit `updateConstraints()` reads (tracked and re-run on region change) and SwiftUI `GeometryReader` coordinate queries.
+- Updated camera accessories guidance with `AVCaptureDevice.RotationCoordinator` (iOS 17.0) separate preview and capture angles, and handling preview aspect ratio and position across poses.
+- Refined audit script check for odd fixed grid column counts to account for adaptive grid layouts.
+
+### Added
+- Added `PalettePlacement.swift` reusable asset for adaptive UI placement around reserved regions and fold boundaries.
+
 ## [1.3.3] - 2026-10-26
 
 Reviewed upstream (still v1.3.2) and Apple's current documentation after device launch.

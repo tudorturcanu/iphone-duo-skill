@@ -2,7 +2,7 @@
 
 Source: Apple's news post [Prepare and submit your apps for iPhone Duo](https://developer.apple.com/news/?id=kkphp5qo)
 (2026-10-05), its [Three steps](https://developer.apple.com/iphone-duo/prepare/) checklist, and the App Store
-Connect help pages, checked 2026-10-26. Read this only when the user asks about submission. Back to the [main reference](apple-hig-designing-for-iphone-duo.md).
+Connect help pages, checked 2026-11-02. Read this only when the user asks about submission. Back to the [main reference](apple-hig-designing-for-iphone-duo.md).
 
 - **Dates.** iPhone Duo is available to customers from **October 23, 2026**. Apps and games optimized for it can be
   submitted in App Store Connect now. **Starting April 2027, every app submitted using the iOS 27.1 SDK or later must

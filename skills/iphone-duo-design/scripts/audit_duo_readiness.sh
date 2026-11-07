@@ -8,7 +8,7 @@
 #   -q            Hide clean categories
 #   -n N          Matches shown per category (default 5, 0 = all)
 #
-# Exit codes: 0 = clean, 1 = anti-patterns found, 2 = bad arguments, nothing to scan, or search error
+# Exit codes: 0 = clean, 1 = candidates found, 2 = incomplete audit (input, dependency, or search error)
 # Categories titled "Advisory: ..." are common in correct code: they're listed (◦) but never change the exit code.
 # AUDIT_NO_RG=1 forces the grep fallback.
 #
@@ -66,7 +66,7 @@ CHECKS=(
     "Several controls in one ToolbarItem|\[stack inside ToolbarItem\]$|A custom view never moves to the side bar. Use ToolbarItemGroup with one item per control."
     "Side bars disabled|(toolbarVerticalBehavior\(\.disabled\)|preferredVerticalBarBehavior)|Only for immersive single-purpose UIs (Calculator, full-screen player). Keep the system's side placement otherwise."
     "Deprecated NavigationView|(^|[^A-Za-z])NavigationView[[:space:]]*\{|Use NavigationSplitView or NavigationStack."
-    "Odd fixed grid column counts|((repeating:[[:space:]]*(GridItem|\.init)[^,]*,|NSCollectionLayoutGroup.*)[[:space:]]*count:[[:space:]]*[3579]$N|\[[[:space:]]*(${GRID}[[:space:]]*,[[:space:]]*){2}(${GRID}[[:space:]]*,[[:space:]]*){0,2}${GRID}[[:space:]]*,?[[:space:]]*\])|Use an even count or adaptive columns."
+    "Odd fixed grid column counts|((repeating:[[:space:]]*(GridItem|\.init)[^,]*,|NSCollectionLayoutGroup.*)[[:space:]]*count:[[:space:]]*[3579]$N|\[[[:space:]]*(${GRID}[[:space:]]*,[[:space:]]*){2}(${GRID}[[:space:]]*,[[:space:]]*){0,2}${GRID}[[:space:]]*,?[[:space:]]*\])|Derive columns from available width and prefer an even count when a fold exists; adaptive alone can be odd."
     "Orientation lock (games must fill every pose)|supportedInterfaceOrientations|Fill the screen in every pose; no bare letterboxing."
     "Advisory: aspect-fill media (check cropping)|([.]scaleAspectFill|contentMode:[[:space:]]*[.]fill|[.]scaledToFill\(\))|Wider displays crop more. Choose fill or fit from the aspect ratio or size class, or set a focal point."
 )

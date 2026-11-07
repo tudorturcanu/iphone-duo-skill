@@ -3,7 +3,8 @@
 Original summary of Apple's written highlights of the iPhone Duo Group Labs
 ([forum thread 847644](https://developer.apple.com/forums/thread/847644), posted by an Apple DTS engineer in September
 2026; [sessions on demand](https://developer.apple.com/videos/play/meet-with-apple/285)), read 2026-10-07. API names
-and availability were checked against Apple's docs the same day. These are engineers' answers in a Q&A, not reference
+and availability were checked against Apple's docs the same day. Rechecked the written highlights on 2026-10-28;
+tracked API availability and Device Hub advice were checked again on 2026-11-02. These are engineers' answers in a Q&A, not reference
 documentation: they can change, so test on a device before relying on one. Read this only when the question is about
 one of these topics. Back to the [main reference](apple-hig-designing-for-iphone-duo.md).
 
@@ -84,5 +85,5 @@ motionManager.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: .main) {
   guidelines, and the short outer display makes this more likely: let content scroll.
 - VoiceOver order follows standard containers and grouping. A custom layout that spans the fold may need explicit
   accessibility containers or sort priorities.
-- Test Dynamic Type and contrast in each pose. Test VoiceOver directly on a device: Xcode 27.2 RC's Device Hub has an
+- Test Dynamic Type and contrast in each pose. Test VoiceOver directly on a device: Xcode 27.2's Device Hub has an
   accessibility inspection limitation; see [testing](apple-hig-designing-for-iphone-duo.md#5-beyond-the-hig-developer-article-and-tech-talks).
